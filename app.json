@@ -1,0 +1,16 @@
+{
+    "id": "4090a62a-bcf7-411f-86a2-861085176566",
+    "version": "0.0.1",
+    "requiredApiVersion": "^1.28.0",
+    "iconFile": "icon.png",
+    "author": {
+        "name": "juzser",
+        "homepage": "https://github.com/juzser",
+        "support": "https://github.com/juzser"
+    },
+    "name": "time-off",
+    "nameSlug": "time-off",
+    "classFile": "TimeOffApp.ts",
+    "description": "Request, approve, and manage your team’s time-off",
+    "implements": []
+}

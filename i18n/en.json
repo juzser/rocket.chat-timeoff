@@ -1,0 +1,16 @@
+{
+    "bot_username": "Bot Username",
+    "bot_username_desc": "Select a bot to send message",
+    "checkin_room": "Checkin Room",
+    "checkin_room_desc": "Room to post check-in logs",
+    "timeoff_room": "Timeoff Room",
+    "timeoff_room_desc": "Room to post request logs",
+    "enable_approval": "Enable Approval feature",
+    "enable_approval_desc": "",
+    "checkin_time": "Check-in Time",
+    "checkin_time_desc": "Format: `hh:mm`. Required.",
+    "checkout_time": "Check-out Time",
+    "checkout_time_desc": "Format: `hh:mm`. Required.",
+    "wfh_params": "start|pause|resume|end message(optional)",
+    "wfh_desc": "Work from home status update"
+}
