@@ -26,9 +26,9 @@ export async function CheckinCommand(app: TimeOffApp, context: SlashCommandConte
     const senderTime = currentTime + ((user.utcOffset - AppConfig.defaultTimezone) * 60 * 60 * 1000);
 
     // Get timelog from cache or DB
-    const timelogId = getTimeLogId(currentTime);
+    const timelogId = getTimeLogId(currentTime, room.slugifiedName);
     const timelog = app.timelogCache && app.timelogCache.isValid()
-        ? app.timelogCache.timelog
+        ? app.timelogCache.getTimelogById(timelogId)
         : await getTimeLogById(timelogId, room, read);
 
     // New member check-in
@@ -148,9 +148,9 @@ export async function CheckoutCommand(type: 'pause' | 'end', app: TimeOffApp, co
     const senderTime = currentTime + ((user.utcOffset - AppConfig.defaultTimezone) * 60 * 60 * 1000);
 
     // Get timelog from cache or DB
-    const timelogId = getTimeLogId(currentTime);
+    const timelogId = getTimeLogId(currentTime, room.slugifiedName);
     const timelog = app.timelogCache && app.timelogCache.isValid()
-        ? app.timelogCache.timelog
+        ? app.timelogCache.getTimelogById(timelogId)
         : await getTimeLogById(timelogId, room, read);
 
     const newState: IMemberState = {

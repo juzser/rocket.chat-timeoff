@@ -24,9 +24,9 @@
     js-tokens "^4.0.0"
 
 "@rocket.chat/apps-engine@^1.28.0":
-  version "1.28.0"
-  resolved "https://registry.yarnpkg.com/@rocket.chat/apps-engine/-/apps-engine-1.28.0.tgz#405b9521a4b72d23f15c210abb84a59e7b832fae"
-  integrity sha512-ALrlGHVO1IhgAQ/rdZVS9nuPHwSE2VtPy3e2xbLzhMloZSpcG/ht9PPrDqIX6ZHHwiDxLbBd2/yT8vt86lXZeg==
+  version "1.30.0"
+  resolved "https://registry.yarnpkg.com/@rocket.chat/apps-engine/-/apps-engine-1.30.0.tgz#d4db6136a8459d1c3669e4fbb5abed11b4f5f278"
+  integrity sha512-04X4nQPgZEz9w4b/8zCyW+EVixfzdrugW4u6YUYnB4tc9lDALawSvhz88XlDGvKwbsUKFfSx6ejdhASwSssPcA==
   dependencies:
     adm-zip "^0.4.9"
     cryptiles "^4.1.3"

@@ -6,7 +6,7 @@ export enum WfhStatus {
 }
 
 export interface ITimeLog {
-    id: string; // ddmmyyyy
+    id: string; // room_ddmmyyyy
     room: string; // room slugify name
     msgId: string; // message log id
     memberActive: Array<IMemberTime>; // user id array who active today

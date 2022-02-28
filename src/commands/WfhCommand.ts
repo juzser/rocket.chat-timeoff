@@ -32,8 +32,10 @@ export class WfhCommand implements ISlashCommand {
         }
 
         const roomName = context.getRoom().slugifiedName;
+
         // Wrong room
-        if (!this.app.checkinRoom.includes(roomName)) {
+        const checkinRooms = this.app.checkinRoom.split(',');
+        if (!checkinRooms.includes(roomName)) {
             return await notifyUser({ app: this.app, message: lang.error.wrongRoom, user: context.getSender(), room: context.getRoom(), modify });
         }
 

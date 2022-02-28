@@ -16,7 +16,7 @@ const timeLogKey = 'timeoff-log';
  */
 export async function createTimeLog(id: string, room: IRoom, data: ITimeLog, persis: IPersistence): Promise<string> {
     // Save to store
-    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${timeLogKey}_${room.slugifiedName}_${id}`);
+    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${timeLogKey}_${id}`);
     return persis.createWithAssociation(data, association);
 }
 
@@ -28,7 +28,7 @@ export async function createTimeLog(id: string, room: IRoom, data: ITimeLog, per
  */
 export async function updateTimelogById(id: string, room: IRoom, newData: ITimeLog, persis: IPersistence): Promise<string> {
     // Save to store
-    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${timeLogKey}_${room.slugifiedName}_${id}`);
+    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${timeLogKey}_${id}`);
     return persis.updateByAssociation(association, newData);
 }
 
@@ -39,7 +39,7 @@ export async function updateTimelogById(id: string, room: IRoom, newData: ITimeL
  * @param read
  */
 export async function getTimeLogById(id: string, room: IRoom, read: IRead): Promise<ITimeLog | null> {
-    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${timeLogKey}_${room.slugifiedName}_${id}`);
+    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${timeLogKey}_${id}`);
     const data = await read.getPersistenceReader().readByAssociation(association);
 
     if (!data.length) {
@@ -56,7 +56,7 @@ export async function getTimeLogById(id: string, room: IRoom, read: IRead): Prom
  */
 export async function getCurrentTimeLog(room: IRoom, read: IRead): Promise<ITimeLog | null> {
     const currentDate = new Date();
-    const id = getTimeLogId(currentDate.getTime());
+    const id = getTimeLogId(currentDate.getTime(), room.slugifiedName);
 
     return getTimeLogById(id, room, read);
 }
@@ -66,7 +66,7 @@ export async function getCurrentTimeLog(room: IRoom, read: IRead): Promise<ITime
  *
  * @param time
  */
-export function getTimeLogId(time: number): string {
+export function getTimeLogId(time: number, roomSlug: string): string {
     const datetime = new Date(time);
 
     const date = datetime.getDate();
@@ -81,7 +81,7 @@ export function getTimeLogId(time: number): string {
 
     const year = datetime.getFullYear();
 
-    return `${dateStr}${monthStr}${year}`;
+    return `${roomSlug}_${dateStr}${monthStr}${year}`;
 }
 
 /**
