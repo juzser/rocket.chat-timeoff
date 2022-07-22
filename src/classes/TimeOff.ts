@@ -1,13 +1,13 @@
 import { IModify, IPersistence, IRead } from '@rocket.chat/apps-engine/definition/accessors';
 import { IUser } from '@rocket.chat/apps-engine/definition/users';
 import { TimeOffApp as App } from '../../TimeOffApp';
-import { IOffLog, IOffMessageData, IOffWarning, RequestType, TimePeriod, IFormData, IScheduleData, IScheduleLog } from '../interfaces/IRequestLog';
+import { IOffLog, IOffMessageData, IOffWarning, RequestType, TimePeriod, IFormData, IScheduleLog } from '../interfaces/IRequestLog';
 import { IRoom } from '@rocket.chat/apps-engine/definition/rooms';
 import { lang } from '../lang/index';
 import { confirmRequestModal } from '../modals/confirmRequestModal';
-import { createOffLog, createScheduleData, getOffLogByUser, getRemainingOff, getScheduleData, updateScheduleData } from '../lib/services';
+import { createOffLog, createScheduleData, getRemainingOff, getScheduleData, updateScheduleData } from '../lib/services';
 import { offlogBlock } from '../messages/offlogBlock';
-import { convertDateToTimestamp, convertTimestampToDate, sendMessage } from '../lib/helpers';
+import { convertTimestampToDate, sendMessage } from '../lib/helpers';
 import { AppConfig } from '../lib/config';
 import { dailylogBlock } from '../messages/dailylogBlock';
 
@@ -48,7 +48,6 @@ export class TimeOff {
         const modal = await confirmRequestModal({
             type: requestType,
             modify,
-            room,
             formData,
             remaining: offRemaining,
             checkinTime: this.app.checkinTime,
@@ -56,6 +55,7 @@ export class TimeOff {
             requestOffBefore: this.app.requestOffBefore,
             requestWfhBefore: this.app.requestWfhBefore,
             requestLateBefore: this.app.requestLateBefore,
+            limitLateDuration: this.app.limitLateDuration,
         });
 
         await modify.getUiController().openModalView(modal, { triggerId }, sender);
@@ -114,9 +114,10 @@ export class TimeOff {
             period: formData.period,
             duration: formData.duration,
             reason: formData.reason,
+            warningList,
         }
 
-        await createOffLog(user.id, persis, logData);
+        await createOffLog(persis, logData);
 
         // Create schedule job to notice in log room
         const listSchedule = await getScheduleData(read);
@@ -174,9 +175,6 @@ export class TimeOff {
                 newListSchedule[scheduleLogIndex].logs.push(logData);
             }
         }
-
-        this.app.getLogger().info(JSON.stringify(listSchedule));
-        this.app.getLogger().info(newListSchedule);
 
         if (!listSchedule) {
             await createScheduleData(newListSchedule, persis);

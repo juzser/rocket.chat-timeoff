@@ -50,6 +50,7 @@ export const vi = {
         late: 'Đi muộn',
         endSoon: 'Nghỉ sớm',
         wfh: 'Work from home',
+        lateEnd: 'Đi muộn/Về sớm',
     },
 
     message: {
@@ -137,6 +138,7 @@ export const vi = {
         :x: Đồng thời bạn phải tích một tích đỏ trên bảng. (Quá số ngày phép)`,
         warningLateRequest: ':heavy_multiplication_x: Bạn xin phép muộn nên phải tích 1 tích đen trên bảng.',
         warningLateTick: ':heavy_multiplication_x: Xin đi muộn hoặc về sớm vẫn phải tích một tích đen trên bảng.',
+        warningLateLimitedTick: ':heavy_multiplication_x: Bạn đã dùng hết quỹ thời gian [đi muộn/về sớm] của tháng này. Bạn phải tích một tích trên bảng.',
     },
 
     offLogMessage: {
@@ -158,5 +160,16 @@ export const vi = {
         wfhList: (total: number) => `${vi.offLogMessage.icon.wfh}  *WFH (${total}):*`,
         lateEndList: () => `${vi.offLogMessage.icon.endSoon} *${vi.common.other}:*`,
         lateEndDesc: (type: string, period: string, duration: number) => `${vi.period[period]} ${vi.confirmRequestModal.type[type]} ${duration} phút`,
+    },
+
+    tickBoard: {
+        heading: 'Thống kê',
+        boardName: (date?: string) => `Thống kê *${date ? date : 'tháng này'}*:`,
+        userLine: ({ username, off, wfh, late }: {
+            username: string,
+            off?: number,
+            wfh?: number,
+            late?: number,
+        }) => `*${username}:* ${off ? `${vi.type.off} ${off} ngày` : ''}${wfh ? ` | WFH ${wfh} ngày` : ''}${late ? ` | ${vi.type.lateEnd} ${late} phút` : ''}`,
     },
 };

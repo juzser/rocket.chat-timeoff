@@ -44,6 +44,7 @@ export interface IOffLog {
     period: TimePeriod;
     duration: number;
     reason: string;
+    warningList: IOffWarning[];
 }
 
 // form data
@@ -80,4 +81,11 @@ export interface IScheduleLog {
     type: RequestType;
     period: TimePeriod;
     duration?: number;
+}
+
+export interface tickLogData {
+    off: number;
+    wfh: number;
+    late: number;
+    warning: IOffWarning[];
 }

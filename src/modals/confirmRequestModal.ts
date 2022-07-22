@@ -8,17 +8,17 @@ import { lang } from '../lang/index';
 import { convertTimestampToDate, getTotalHours } from '../lib/helpers';
 import { AppConfig } from '../lib/config';
 
-export async function confirmRequestModal({ type, modify, room, formData, remaining, checkinTime, checkoutTime, requestOffBefore, requestWfhBefore, requestLateBefore }: {
+export async function confirmRequestModal({ type, modify, formData, remaining, checkinTime, checkoutTime, requestOffBefore, requestWfhBefore, requestLateBefore, limitLateDuration }: {
     type: RequestType,
     modify: IModify,
-    room: IRoom,
     formData: IFormData,
     remaining: IMemberOffRemain,
     checkinTime: { morning: string; afternoon: string },
     checkoutTime: { morning: string; afternoon: string },
     requestOffBefore: number;
     requestWfhBefore: number;
-    requestLateBefore: number,
+    requestLateBefore: number;
+    limitLateDuration: number;
 }): Promise<IUIKitModalViewParam> {
     const block = modify.getCreator().getBlockBuilder();
 
@@ -29,7 +29,6 @@ export async function confirmRequestModal({ type, modify, room, formData, remain
 
     const warningList: IOffWarning[] = [];
     let msgData: IOffMessageData | undefined;
-
 
     if (type === RequestType.OFF || type === RequestType.WFH) {
         // If the duration is 1 day and start in the morning,
@@ -50,7 +49,7 @@ export async function confirmRequestModal({ type, modify, room, formData, remain
         const startDateParsed = new Date(startDate);
         const startDateDay = startDateParsed.getDay();
 
-        if ((startDateDay + duration) > 5) {
+        if ((startDateDay + duration) > 6) {
             const weekendTimes = Math.floor((startDateDay + duration) / 5);
             durationMilliseconds += weekendTimes * 2 * 24 * 60 * 60 * 1000;
         }
@@ -133,7 +132,10 @@ export async function confirmRequestModal({ type, modify, room, formData, remain
         // Warning late/end soon still have to tick on dead board
         if (remaining.late - duration < 0) {
             block.addSectionBlock({
-                text: block.newMarkdownTextObject(lang.confirmRequestModal.warningLateTick),
+                text: block.newMarkdownTextObject(limitLateDuration && limitLateDuration > 0
+                    ? lang.confirmRequestModal.warningLateTick
+                    : lang.confirmRequestModal.warningLateLimitedTick
+                ),
             });
         }
 

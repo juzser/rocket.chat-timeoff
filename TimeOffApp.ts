@@ -83,7 +83,13 @@ export class TimeOffApp extends App {
             const room = await read.getRoomReader().getByName(this.offLogRoom);
 
             const date = new Date();
-            const tomorrow = date.setDate(date.getDate() + 1);
+            let tomorrow = date.setDate(date.getDate() + 1);
+            if (date.getDay() === 0) {
+                tomorrow = date.setDate(date.getDate() + 1);
+            }
+            if (date.getDay() === 6) {
+                tomorrow = date.setDate(date.getDate() + 2);
+            }
 
             // Fallback value for inputs
             const defaultPeriod = offType === RequestType.OFF || offType === RequestType.WFH

@@ -1,7 +1,7 @@
 import { IPersistence, IRead } from '@rocket.chat/apps-engine/definition/accessors';
 import { RocketChatAssociationModel, RocketChatAssociationRecord } from '@rocket.chat/apps-engine/definition/metadata';
 import { IRoom } from '@rocket.chat/apps-engine/definition/rooms';
-import { getTimeLogId, getTotalDayOff, getTotalDayWfh } from './helpers';
+import { convertTimestampToDate, getTimeLogId, getTotalDayOff, getTotalDayWfh } from './helpers';
 
 import { ITimeLog } from '../interfaces/ITimeLog';
 import { IMemberExtra, IMemberOffRemain, IOffLog, IScheduleData, RequestType } from '../interfaces/IRequestLog';
@@ -67,24 +67,74 @@ export async function getCurrentTimeLog(room: IRoom, read: IRead): Promise<ITime
 /**
  * Store the day off log
  */
-export async function createOffLog(userId: string, persis: IPersistence, data: IOffLog): Promise<string> {
+export async function createOffLog(persis: IPersistence, data: IOffLog): Promise<string> {
     // Save to store
-    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${OFF_LOG_KEY}_${userId}`);
+    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_LOG_KEY);
     return persis.createWithAssociation(data, association);
+}
+
+/**
+ * Get all off logs
+ */
+ export async function getOffLogs(read: IRead): Promise<IOffLog[]> {
+    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_LOG_KEY);
+    const data = await read.getPersistenceReader().readByAssociation(association);
+
+    return data as IOffLog[];
 }
 
 /**
  * Get day off log data by user ID from association
  */
 export async function getOffLogByUser(userId: string, read: IRead): Promise<IOffLog[] | null> {
-    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${OFF_LOG_KEY}_${userId}`);
-    const data = await read.getPersistenceReader().readByAssociation(association);
+    const data = await getOffLogs(read);
 
     if (!data.length) {
         return null;
     }
 
-    return data as IOffLog[];
+    const results = data.filter((item: IOffLog) => item.user_id === userId);
+
+    return results as IOffLog[];
+}
+
+/**
+ * Get off log by the date
+ */
+export async function getOffLogByDate(read: IRead, inputDate?: string): Promise<IOffLog[] | null> {
+    const data = await getOffLogs(read);
+
+    if (!data.length) {
+        return null;
+    }
+
+    const currentDate = new Date();
+    const inputDateParts = inputDate
+        ? inputDate.split('/')
+        : [currentDate.getMonth() + 1, currentDate.getFullYear()];
+
+    const results = data.filter((item: IOffLog) => {
+        const date = convertTimestampToDate(item.createdDate);
+        const dateParts = date.split('/');
+
+        // dd/mm/yyyy
+        if (inputDateParts.length === 3) {
+            return +dateParts[0] === +inputDateParts[0]
+                && +dateParts[1] === +inputDateParts[1]
+                && +dateParts[2] === +inputDateParts[2];
+        }
+
+        // mm/yyyy
+        if (inputDateParts.length === 2) {
+            return +dateParts[1] === +inputDateParts[0]
+                && +dateParts[2] === +inputDateParts[1];
+        }
+
+        // yyyy
+        return +dateParts[2] === +inputDateParts[0];
+    });
+
+    return results as IOffLog[];
 }
 
 /**

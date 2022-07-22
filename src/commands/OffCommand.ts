@@ -7,6 +7,7 @@ import { ExtraOffCommand } from './ExtraOff';
 
 import { HelpCommand } from './Help';
 import { RequestCommand } from './Request';
+import { TickBoardCommand } from './TickBoard';
 
 export class OffCommand implements ISlashCommand {
     public command = 'off';
@@ -18,6 +19,7 @@ export class OffCommand implements ISlashCommand {
         Help: 'help',
         Request: 'request',
         Extra: 'extra',
+        Tick: 'tick',
     };
 
     constructor(private readonly app: AppClass) {}
@@ -32,8 +34,8 @@ export class OffCommand implements ISlashCommand {
             case this.CommandEnum.Extra:
                 await ExtraOffCommand({ app: this.app, context, read, persis, modify, params });
                 break;
-            case 'resetLog':
-                await removeScheduleData(persis);
+            case this.CommandEnum.Tick:
+                await TickBoardCommand({ app: this.app, context, read, persis, modify, params });
                 break;
 
             default:
