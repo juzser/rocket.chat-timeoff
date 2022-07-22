@@ -1,7 +1,7 @@
 import { BlockBuilder, BlockElementType, ButtonStyle } from '@rocket.chat/apps-engine/definition/uikit';
 import { IMemberTime, WfhStatus } from '../interfaces/ITimeLog';
 import { lang } from '../lang/index';
-import { getTimeHour } from '../lib/services';
+import { getTimeHour } from '../lib/helpers';
 
 export async function timelogBlock({ block, memberData }: {
     block: BlockBuilder,

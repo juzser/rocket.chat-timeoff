@@ -23,10 +23,10 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
-"@rocket.chat/apps-engine@^1.28.0":
-  version "1.30.0"
-  resolved "https://registry.yarnpkg.com/@rocket.chat/apps-engine/-/apps-engine-1.30.0.tgz#d4db6136a8459d1c3669e4fbb5abed11b4f5f278"
-  integrity sha512-04X4nQPgZEz9w4b/8zCyW+EVixfzdrugW4u6YUYnB4tc9lDALawSvhz88XlDGvKwbsUKFfSx6ejdhASwSssPcA==
+"@rocket.chat/apps-engine@1.32.0":
+  version "1.32.0"
+  resolved "https://registry.yarnpkg.com/@rocket.chat/apps-engine/-/apps-engine-1.32.0.tgz#b6f799f114ade3585f102d485f2a07842ff00960"
+  integrity sha512-K+5NJto1BfO0NFiJX048tAWJqNQjdHGg5YPB24MQ/cDq206hDPnJakihF02LgardAQShIK3TIw2MnKgX1CB2/w==
   dependencies:
     adm-zip "^0.4.9"
     cryptiles "^4.1.3"

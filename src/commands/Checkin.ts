@@ -8,7 +8,8 @@ import { IMemberState, IMemberTime, WfhStatus } from '../interfaces/ITimeLog';
 import { lang } from '../lang/index';
 import { AppConfig } from '../lib/config';
 import { notifyUser, sendMessage, updateMessage } from '../lib/helpers';
-import { createTimeLog, getTimeLogById, getTimeLogId, updateTimelogById } from '../lib/services';
+import { createTimeLog, getTimeLogById, updateTimelogById } from '../lib/services';
+import { getTimeLogId } from '../lib/helpers';
 import { timelogBlock } from '../messages/timelogBlock';
 
 export async function CheckinCommand(app: TimeOffApp, context: SlashCommandContext, read: IRead, modify: IModify, persis: IPersistence, params?: Array<string>): Promise<void> {
@@ -27,9 +28,13 @@ export async function CheckinCommand(app: TimeOffApp, context: SlashCommandConte
 
     // Get timelog from cache or DB
     const timelogId = getTimeLogId(currentTime, room.slugifiedName);
-    const timelog = app.timelogCache && app.timelogCache.isValid()
-        ? app.timelogCache.getTimelogById(timelogId)
-        : await getTimeLogById(timelogId, room, read);
+    let timelog = app.timelogCache && app.timelogCache.isValid()
+        ? app.timelogCache.getTimeLogById(timelogId)
+        : null;
+
+    if (!timelog) {
+        timelog = await getTimeLogById(timelogId, read);
+    }
 
     // New member check-in
     const member: IMemberTime = {
@@ -88,7 +93,7 @@ export async function CheckinCommand(app: TimeOffApp, context: SlashCommandConte
         app.timelogCache = new TimeLogCache(timelog);
 
         // Update existed timelog
-        await updateTimelogById(timelogId, room, timelog, persis);
+        await updateTimelogById(timelogId, timelog, persis);
     } else {
         /**
          * No timelog for today -> OK current member is the first one
@@ -123,9 +128,9 @@ export async function CheckinCommand(app: TimeOffApp, context: SlashCommandConte
 
         // Create record
         if (timelog) {
-            await updateTimelogById(timelogId, room, newTimelog, persis);
+            await updateTimelogById(timelogId, newTimelog, persis);
         } else {
-            await createTimeLog(timelogId, room, newTimelog, persis);
+            await createTimeLog(timelogId, newTimelog, persis);
         }
     }
 
@@ -149,9 +154,13 @@ export async function CheckoutCommand(type: 'pause' | 'end', app: TimeOffApp, co
 
     // Get timelog from cache or DB
     const timelogId = getTimeLogId(currentTime, room.slugifiedName);
-    const timelog = app.timelogCache && app.timelogCache.isValid()
-        ? app.timelogCache.getTimelogById(timelogId)
-        : await getTimeLogById(timelogId, room, read);
+    let timelog = app.timelogCache && app.timelogCache.isValid()
+        ? app.timelogCache.getTimeLogById(timelogId)
+        : null;
+
+    if(!timelog) {
+        timelog = await getTimeLogById(timelogId, read);
+    }
 
     const newState: IMemberState = {
         status: type === 'pause' ? WfhStatus.PAUSE : WfhStatus.END,
@@ -204,7 +213,7 @@ export async function CheckoutCommand(type: 'pause' | 'end', app: TimeOffApp, co
     app.timelogCache = new TimeLogCache(timelog);
 
     // Update existed timelog
-    await updateTimelogById(timelogId, room, timelog, persis);
+    await updateTimelogById(timelogId, timelog, persis);
 
     // Temporary notify to user
     await notifyUser({ app, message: lang.checkin.endNotify, user, room, modify });

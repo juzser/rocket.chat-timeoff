@@ -184,3 +184,104 @@ export async function getMembersByRoom(app: appClass, room: IRoom, read: IRead):
 
     return members.filter((member) => !(/(rocket\.cat|app\.|\.bot|bot\.)/gi.test(member.username))) || [];
 }
+
+/**
+ * Convert timestamp to time log id ddmmyyyy
+ *
+ * @param time
+ */
+ export function getTimeLogId(time: number, roomSlug: string): string {
+    const datetime = new Date(time);
+
+    const date = datetime.getDate();
+    const dateStr = date > 9
+        ? `${date}`
+        : `0${date}`;
+
+    const month = datetime.getMonth();
+    const monthStr = month > 9
+        ? `${month}`
+        : `0${month}`;
+
+    const year = datetime.getFullYear();
+
+    return `${roomSlug}_${dateStr}${monthStr}${year}`;
+}
+
+/**
+ * Get time string hh:mm
+ *
+ * @param time
+ */
+ export function getTimeHour(time: number): string {
+    const datetime = new Date(time);
+
+    const hour = datetime.getHours();
+    const hourStr = hour > 9
+        ? `${hour}`
+        : `0${hour}`;
+
+    const minute = datetime.getMinutes();
+    const minuteStr = minute > 9
+        ? `${minute}`
+        : `0${minute}`;
+
+    return `${hourStr}:${minuteStr}`;
+}
+
+/**
+ * Convert timestamp to date format dd/mm/yyyy
+ */
+export function convertTimestampToDate(timestamp: number): string {
+    const date = new Date(timestamp);
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+}
+
+/**
+ * Convert date format dd/mm/yyyy to timestamp
+ */
+export function convertDateToTimestamp(date: string): number {
+    const dateArray = date.split('/');
+    const day = parseInt(dateArray[0], 10);
+    const month = parseInt(dateArray[1], 10);
+    const year = parseInt(dateArray[2], 10);
+    return new Date(year, month - 1, day).getTime();
+}
+
+/**
+ * Round the number to the nearest float .5
+ */
+export function roundToHalf(num: number): number {
+    return Math.round(num * 2) / 2;
+}
+
+/**
+ * Get total day off by calculate the month of the year
+ */
+export function getTotalDayOff(dayoffPerMonth: number): number {
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+
+    return dayoffPerMonth * (currentMonth + 1);
+}
+
+/**
+ * Get total day off by calculate the month of the year
+ */
+export function getTotalDayWfh(wfhPerMonth: number): number {
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+
+    return wfhPerMonth * (currentMonth + 1);
+}
+
+/**
+ * Get total hours from hh:mm
+ */
+export function getTotalHours(time: string): number {
+    const timeArray = time.split(':');
+    return parseInt(timeArray[0], 10) + parseInt(timeArray[1], 10) / 60;
+}

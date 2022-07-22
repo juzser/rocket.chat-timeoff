@@ -1,7 +1,7 @@
 {
     "id": "4090a62a-bcf7-411f-86a2-861085176566",
     "version": "0.0.1",
-    "requiredApiVersion": "^1.28.0",
+    "requiredApiVersion": "1.32.0",
     "iconFile": "icon.png",
     "author": {
         "name": "juzser",
@@ -11,6 +11,38 @@
     "name": "time-off",
     "nameSlug": "time-off",
     "classFile": "TimeOffApp.ts",
-    "description": "Request, approve, and manage your team’s time-off",
-    "implements": []
+    "description": "Request, approve, and manage your team's time-off",
+    "implements": [],
+    "permissions": [
+        {
+            "name": "ui.interact"
+        },
+        {
+            "name": "slashcommand"
+        },
+        {
+            "name": "persistence"
+        },
+        {
+            "name": "message.read"
+        },
+        {
+            "name": "message.write"
+        },
+        {
+            "name": "scheduler"
+        },
+        {
+            "name": "room.read"
+        },
+        {
+            "name": "room.write"
+        },
+        {
+            "name": "user.read"
+        },
+        {
+            "name": "ui.registerButtons"
+        }
+    ]
 }

@@ -24,7 +24,7 @@ export class TimeLogCache {
         return this._expire > Date.now();
     }
 
-    public getTimelogById(id: string): ITimeLog | undefined {
+    public getTimeLogById(id: string): ITimeLog | undefined {
         return this._timelog.find((t) => t.id === id);
     }
 

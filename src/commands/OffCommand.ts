@@ -2,19 +2,22 @@ import { IHttp, IModify, IPersistence, IRead } from '@rocket.chat/apps-engine/de
 import { ISlashCommand, SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashcommands';
 
 import { TimeOffApp as AppClass } from '../../TimeOffApp';
+import { removeScheduleData } from '../lib/services';
+import { ExtraOffCommand } from './ExtraOff';
 
 import { HelpCommand } from './Help';
 import { RequestCommand } from './Request';
 
 export class OffCommand implements ISlashCommand {
     public command = 'off';
-    public i18nParamsExample = 'cmd_params';
-    public i18nDescription = 'cmd_desc';
+    public i18nParamsExample = 'off_params';
+    public i18nDescription = 'off_desc';
     public providesPreview = false;
 
     private CommandEnum = {
         Help: 'help',
         Request: 'request',
+        Extra: 'extra',
     };
 
     constructor(private readonly app: AppClass) {}
@@ -26,9 +29,15 @@ export class OffCommand implements ISlashCommand {
             case this.CommandEnum.Help:
                 await HelpCommand(this.app, context, read, modify);
                 break;
+            case this.CommandEnum.Extra:
+                await ExtraOffCommand({ app: this.app, context, read, persis, modify, params });
+                break;
+            case 'resetLog':
+                await removeScheduleData(persis);
+                break;
 
             default:
-                await RequestCommand(this.app, context, read, modify);
+                await RequestCommand({ app: this.app, context, read, persis, modify });
         }
     }
 }
