@@ -26,34 +26,36 @@ export async function ExtraOffCommand({ app, context, read, persis, modify, para
         return;
     }
 
-    const [ username, type, ...count ] = params;
+    const [ username, type, count, ...year ] = params;
     const user = await read.getUserReader().getByUsername(username);
 
     if (!user) {
         return await notifyUser({ app, user: context.getSender(), room: context.getRoom(), message: `User ${username} not found`, modify });
     }
 
-    const userOffInfo = await getOffMemberByUser(user.id, persis, read);
+    const countYear = year.length ? +year[0] : new Date().getFullYear();
+
+    const userOffInfo = await getOffMemberByUser(user.id, countYear, persis, read);
 
     // Create new record if not exists or update existed one
     if (!userOffInfo) {
-        await createOffMember(user.id, persis, {
+        await createOffMember(user.id, countYear, persis, {
             id: user.id,
-            offExtra: type === RequestType.OFF ? parseInt(count[0], 10) : 0,
-            wfhExtra: type === RequestType.WFH ? parseInt(count[0], 10) : 0,
-            lateExtra: type === RequestType.LATE || type === RequestType.END_SOON ? parseInt(count[0], 10) : 0,
+            offExtra: type === RequestType.OFF ? parseInt(count, 10) : 0,
+            wfhExtra: type === RequestType.WFH ? parseInt(count, 10) : 0,
+            lateExtra: type === RequestType.LATE || type === RequestType.END_SOON ? parseInt(count, 10) : 0,
         });
     } else {
-        await updateOffMember(user.id, persis, {
+        await updateOffMember(user.id, countYear, persis, {
             id: user.id,
             offExtra: type === RequestType.OFF
-                ? parseInt(count[0], 10) + userOffInfo.offExtra
+                ? parseInt(count, 10) + userOffInfo.offExtra
                 : userOffInfo.offExtra,
             wfhExtra: type === RequestType.WFH
-                ? parseInt(count[0], 10) + userOffInfo.wfhExtra
+                ? parseInt(count, 10) + userOffInfo.wfhExtra
                 : userOffInfo.wfhExtra,
             lateExtra: type === RequestType.LATE || type === RequestType.END_SOON
-                ? parseInt(count[0], 10) + userOffInfo.lateExtra
+                ? parseInt(count, 10) + userOffInfo.lateExtra
                 : userOffInfo.lateExtra,
         });
     }

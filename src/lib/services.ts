@@ -140,26 +140,26 @@ export async function getOffLogByDate(read: IRead, inputDate?: string): Promise<
 /**
  * Store the off information of member
  */
-export async function createOffMember(userId: string, persis: IPersistence, data: IMemberExtra): Promise<string> {
+export async function createOffMember(userId: string, year: number, persis: IPersistence, data: IMemberExtra): Promise<string> {
     // Save to store
-    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${OFF_MEMBER_KEY}_${userId}`);
+    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${OFF_MEMBER_KEY}_${userId}_${year}`);
     return persis.createWithAssociation(data, association);
 }
 
 /**
  * Update off information of member
  */
-export async function updateOffMember(userId: string, persis: IPersistence, data: IMemberExtra): Promise<string> {
+export async function updateOffMember(userId: string, year: number, persis: IPersistence, data: IMemberExtra): Promise<string> {
     // Save to store
-    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${OFF_MEMBER_KEY}_${userId}`);
+    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${OFF_MEMBER_KEY}_${userId}_${year}`);
     return persis.updateByAssociation(association, data);
 }
 
 /**
  * Get off information of member
  */
-export async function getOffMemberByUser(userId: string, persis: IPersistence, read: IRead): Promise<IMemberExtra | null> {
-    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${OFF_MEMBER_KEY}_${userId}`);
+export async function getOffMemberByUser(userId: string, year: number, persis: IPersistence, read: IRead): Promise<IMemberExtra | null> {
+    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${OFF_MEMBER_KEY}_${userId}_${year}`);
     const data = await read.getPersistenceReader().readByAssociation(association);
 
     if (!data.length) {
@@ -187,7 +187,7 @@ export async function getRemainingOff({ dayoffPerMonth, wfhPerMonth, limitLateDu
     const totalDayOff = getTotalDayOff(dayoffPerMonth, year && year < currentYear ? true : false);
     const totalWfh = getTotalDayWfh(wfhPerMonth, year && year < currentYear ? true : false);
     const offLog = await getOffLogByUser(userId, read);
-    const memberInfo = await getOffMemberByUser(userId, persis, read);
+    const memberInfo = await getOffMemberByUser(userId, yearLog, persis, read);
 
     const result = {
         off: totalDayOff + (memberInfo?.offExtra || 0),
@@ -198,7 +198,9 @@ export async function getRemainingOff({ dayoffPerMonth, wfhPerMonth, limitLateDu
     const firstTimeofYear = new Date(yearLog, 0, 1).getTime();
     const firstTimeofMonth = new Date(yearLog, new Date().getMonth(), 1).getTime();
 
-    const endDate = currentYear > yearLog ? new Date(currentYear, 11, 31).getTime() : new Date().getTime();
+    const endDate = currentYear > yearLog
+        ? new Date(yearLog, 11, 31).getTime()
+        : new Date().getTime();
 
     // Only minus the time if it's valid
     // Off & wfh: approved & during this year
