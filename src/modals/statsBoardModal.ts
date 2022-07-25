@@ -22,13 +22,11 @@ export async function statsBoardModal({ modify, stats, year }: {
     let messageContent = '';
 
     stats.map((stat, index) => {
-        messageContent += `${index ? '\n': ''}${lang.statsBoard.userLine({ username: stat.username, off: stat.remainingOff.off, wfh: stat.remainingOff.wfh })} `;
+        messageContent += `${index ? '\n': ''}${index + 1}. ${lang.statsBoard.userLine({ username: stat.username, off: stat.remainingOff.off, wfh: stat.remainingOff.wfh })} `;
     });
 
-    block.addContextBlock({
-        elements: [
-            block.newMarkdownTextObject(messageContent),
-        ],
+    block.addSectionBlock({
+        text: block.newMarkdownTextObject(messageContent),
     });
 
     return {

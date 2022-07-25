@@ -25,7 +25,14 @@ export async function StatsCommand({ app, context, read, persis, modify, params 
 
     const members = room ? await read.getRoomReader().getMembers(room.id) : [];
 
-    const memberIds = members.map((member) => member.id);
+    const activeMembers = members.filter((member) => {
+        return member.isEnabled && member.type === 'user' && !member.roles.includes('guest');
+    });
+
+    const memberIds = activeMembers.map((member) => member.id);
+
+    app.getLogger().info(room);
+    app.getLogger().info(memberIds);
 
     // No member at all
     if (!memberIds || !memberIds.length) {
