@@ -172,16 +172,20 @@ export async function getOffMemberByUser(userId: string, persis: IPersistence, r
 /**
  * Get remaining off type for user
  */
-export async function getRemainingOff({ dayoffPerMonth, wfhPerMonth, limitLateDuration, userId, read, persis }: {
+export async function getRemainingOff({ dayoffPerMonth, wfhPerMonth, limitLateDuration, userId, read, persis, year }: {
     dayoffPerMonth: number;
     wfhPerMonth: number;
     limitLateDuration: number;
     userId: string;
     read: IRead;
     persis: IPersistence;
+    year?: number;
 }): Promise<IMemberOffRemain> {
-    const totalDayOff = getTotalDayOff(dayoffPerMonth);
-    const totalWfh = getTotalDayWfh(wfhPerMonth);
+    const currentYear = new Date().getFullYear();
+    const yearLog = year ? year : currentYear;
+
+    const totalDayOff = getTotalDayOff(dayoffPerMonth, year && year < currentYear ? true : false);
+    const totalWfh = getTotalDayWfh(wfhPerMonth, year && year < currentYear ? true : false);
     const offLog = await getOffLogByUser(userId, read);
     const memberInfo = await getOffMemberByUser(userId, persis, read);
 
@@ -191,8 +195,10 @@ export async function getRemainingOff({ dayoffPerMonth, wfhPerMonth, limitLateDu
         late: limitLateDuration + (memberInfo?.lateExtra || 0),
     };
 
-    const firstTimeofYear = new Date(new Date().getFullYear(), 0, 1).getTime();
-    const firstTimeofMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
+    const firstTimeofYear = new Date(yearLog, 0, 1).getTime();
+    const firstTimeofMonth = new Date(yearLog, new Date().getMonth(), 1).getTime();
+
+    const endDate = currentYear > yearLog ? new Date(currentYear, 11, 31).getTime() : new Date().getTime();
 
     // Only minus the time if it's valid
     // Off & wfh: approved & during this year
@@ -201,6 +207,7 @@ export async function getRemainingOff({ dayoffPerMonth, wfhPerMonth, limitLateDu
         if (log.approved) {
             if ((log.type === RequestType.OFF || log.type === RequestType.WFH)
                 && log.startDate >= firstTimeofYear
+                && log.startDate <= endDate
             ) {
                 result[log.type] -= log.duration;
             }

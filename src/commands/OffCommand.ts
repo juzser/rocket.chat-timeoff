@@ -2,10 +2,10 @@ import { IHttp, IModify, IPersistence, IRead } from '@rocket.chat/apps-engine/de
 import { ISlashCommand, SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashcommands';
 
 import { TimeOffApp as AppClass } from '../../TimeOffApp';
-import { removeScheduleData } from '../lib/services';
 import { ExtraOffCommand } from './ExtraOff';
 
 import { HelpCommand } from './Help';
+import { StatsCommand } from './OffStats';
 import { RequestCommand } from './Request';
 import { TickBoardCommand } from './TickBoard';
 
@@ -20,6 +20,7 @@ export class OffCommand implements ISlashCommand {
         Request: 'request',
         Extra: 'extra',
         Tick: 'tick',
+        Stats: 'stats',
     };
 
     constructor(private readonly app: AppClass) {}
@@ -36,6 +37,9 @@ export class OffCommand implements ISlashCommand {
                 break;
             case this.CommandEnum.Tick:
                 await TickBoardCommand({ app: this.app, context, read, persis, modify, params });
+                break;
+            case this.CommandEnum.Stats:
+                await StatsCommand({ app: this.app, context, read, persis, modify, params });
                 break;
 
             default:

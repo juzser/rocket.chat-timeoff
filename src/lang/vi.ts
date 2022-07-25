@@ -172,4 +172,14 @@ export const vi = {
             late?: number,
         }) => `*${username}:* ${off ? `${vi.type.off} ${off} ngày` : ''}${wfh ? ` | WFH ${wfh} ngày` : ''}${late ? ` | ${vi.type.lateEnd} ${late} phút` : ''}`,
     },
+
+    statsBoard: {
+        heading: 'Thống kê',
+        caption: (year?: number) => `Thống kê ngày nghỉ năm ${year ? year : 'nay'}:`,
+        userLine: ({ username, off, wfh }: {
+            username: string,
+            off?: number,
+            wfh?: number,
+        }) => `*${username}:* còn *${off}* ngày nghỉ | *${wfh}* ngày WFH`,
+    },
 };

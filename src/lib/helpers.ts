@@ -261,9 +261,9 @@ export function roundToHalf(num: number): number {
 /**
  * Get total day off by calculate the month of the year
  */
-export function getTotalDayOff(dayoffPerMonth: number): number {
+export function getTotalDayOff(dayoffPerMonth: number, full?: boolean): number {
     const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
+    const currentMonth = full ? 11 : currentDate.getMonth();
 
     return dayoffPerMonth * (currentMonth + 1);
 }
@@ -271,9 +271,9 @@ export function getTotalDayOff(dayoffPerMonth: number): number {
 /**
  * Get total day off by calculate the month of the year
  */
-export function getTotalDayWfh(wfhPerMonth: number): number {
+export function getTotalDayWfh(wfhPerMonth: number, full?: boolean): number {
     const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
+    const currentMonth = full ? 11 : currentDate.getMonth();
 
     return wfhPerMonth * (currentMonth + 1);
 }
