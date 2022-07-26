@@ -41,18 +41,18 @@ export async function ExtraOffCommand({ app, context, read, persis, modify, para
     if (!userOffInfo) {
         await createOffMember(user.id, countYear, persis, {
             id: user.id,
-            offExtra: type === RequestType.OFF ? parseInt(count, 10) : 0,
-            wfhExtra: type === RequestType.WFH ? parseInt(count, 10) : 0,
+            offExtra: type === RequestType.OFF ? parseFloat(count) : 0,
+            wfhExtra: type === RequestType.WFH ? parseFloat(count) : 0,
             lateExtra: type === RequestType.LATE || type === RequestType.END_SOON ? parseInt(count, 10) : 0,
         });
     } else {
         await updateOffMember(user.id, countYear, persis, {
             id: user.id,
             offExtra: type === RequestType.OFF
-                ? parseInt(count, 10) + userOffInfo.offExtra
+                ? parseFloat(count) + userOffInfo.offExtra
                 : userOffInfo.offExtra,
             wfhExtra: type === RequestType.WFH
-                ? parseInt(count, 10) + userOffInfo.wfhExtra
+                ? parseFloat(count) + userOffInfo.wfhExtra
                 : userOffInfo.wfhExtra,
             lateExtra: type === RequestType.LATE || type === RequestType.END_SOON
                 ? parseInt(count, 10) + userOffInfo.lateExtra
