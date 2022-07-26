@@ -33,6 +33,14 @@ export async function ExtraOffCommand({ app, context, read, persis, modify, para
         return await notifyUser({ app, user: context.getSender(), room: context.getRoom(), message: `User ${username} not found`, modify });
     }
 
+    if (!type) {
+        return await notifyUser({ app, user: context.getSender(), room: context.getRoom(), message: `Missing type: wfh or off. Example: /off extra admin wfh -1`, modify });
+    }
+
+    if (!count) {
+        return await notifyUser({ app, user: context.getSender(), room: context.getRoom(), message: `Missing total extra. Example: /off extra admin wfh -1`, modify });
+    }
+
     const countYear = year.length ? +year[0] : new Date().getFullYear();
 
     const userOffInfo = await getOffMemberByUser(user.id, countYear, persis, read);
