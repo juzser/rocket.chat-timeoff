@@ -29,10 +29,18 @@ export async function StatsCommand({ app, context, read, persis, modify, params 
         return member.isEnabled && member.type === 'user' && !member.roles.includes('guest');
     });
 
-    const memberIds = activeMembers.map((member) => member.id);
+    const memberIds = activeMembers.sort(function(a, b) {
+        const nameA = a.username.toUpperCase();
+        const nameB = b.username.toUpperCase();
+        if (nameA < nameB) {
+          return -1;
+        }
+        if (nameA > nameB) {
+          return 1;
+        }
 
-    app.getLogger().info(room);
-    app.getLogger().info(memberIds);
+        return 0;
+    }).map((member) => member.id);
 
     // No member at all
     if (!memberIds || !memberIds.length) {
