@@ -189,7 +189,7 @@ export async function getRemainingOff({ dayoffPerMonth, wfhPerMonth, limitLateDu
     const offLog = await getOffLogByUser(userId, read);
     const memberInfo = await getOffMemberByUser(userId, yearLog, persis, read);
 
-    const result = {
+    const total = {
         off: totalDayOff + (memberInfo?.offExtra || 0),
         wfh: totalWfh + (memberInfo?.wfhExtra || 0),
         late: limitLateDuration + (memberInfo?.lateExtra || 0),
@@ -208,22 +208,22 @@ export async function getRemainingOff({ dayoffPerMonth, wfhPerMonth, limitLateDu
     offLog?.map((log) => {
         if (log.approved) {
             if ((log.type === RequestType.OFF || log.type === RequestType.WFH)
-                && log.startDate >= firstTimeofYear
-                && log.startDate <= endDate
+                && log.createdDate >= firstTimeofYear
+                && log.createdDate <= endDate
             ) {
-                result[log.type] -= log.duration;
+                total[log.type] -= log.duration;
             }
 
             if ((log.type === RequestType.LATE || log.type === RequestType.END_SOON)
-                && log.startDate >= firstTimeofMonth
+                && log.createdDate >= firstTimeofMonth
             ) {
-                result.late -= log.duration;
+                total.late -= log.duration;
             }
         }
         return log;
     });
 
-    return result;
+    return total;
 }
 
 /**
