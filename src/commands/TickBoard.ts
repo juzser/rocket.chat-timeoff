@@ -23,7 +23,7 @@ export async function TickBoardCommand({ app, context, read, persis, modify, par
     const logs = await getOffLogByDate(read, inputDate || '');
 
     if (!logs || !logs.length) {
-        return await notifyUser({ app, user: context.getSender(), room: context.getRoom(), message: `No record not found`, modify });
+        return await notifyUser({ app, user: context.getSender(), room: context.getRoom(), message: `No record found`, modify });
     }
 
     const messageData: Record<string, tickLogData> = {};
