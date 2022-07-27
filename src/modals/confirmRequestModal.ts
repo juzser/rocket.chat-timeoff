@@ -137,10 +137,9 @@ export async function confirmRequestModal({ type, modify, formData, remaining, c
                     : lang.confirmRequestModal.warningLateLimitedTick
                 ),
             });
+            // Store the warning state
+            warningList.push({ name: WarningType.LATE_END, tick: 'black' });
         }
-
-        // Store the warning state
-        warningList.push({ name: WarningType.LATE_END, tick: 'black' });
     }
 
     // Warning tick on dead board
