@@ -176,10 +176,11 @@ export const vi = {
     statsBoard: {
         heading: 'Thống kê',
         caption: (year?: number) => `Thống kê ngày nghỉ năm ${year ? year : 'nay'}:`,
-        userLine: ({ username, off, wfh }: {
+        userLine: ({ username, off, wfh, late }: {
             username: string,
             off?: number,
             wfh?: number,
-        }) => `*${username}:* còn *${off}* ngày nghỉ | *${wfh}* ngày WFH`,
+            late?: number,
+        }) => `*${username}:* còn *${off}* ngày nghỉ | *${wfh}* ngày WFH | *${late}* phút muộn`,
     },
 };
