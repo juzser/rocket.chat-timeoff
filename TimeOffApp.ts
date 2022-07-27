@@ -25,7 +25,7 @@ import { IOffMessageData, IOffWarning, RequestType, TimePeriod, IFormData } from
 import { settings } from './src/lib/settings';
 import { requestModal } from './src/modals/requestModal';
 import { TimeOff } from './src/classes/TimeOff';
-import { convertDateToTimestamp, notifyUser, roundToHalf } from './src/lib/helpers';
+import { convertDateToTimestamp, convertTimestampToDate, notifyUser, roundToHalf } from './src/lib/helpers';
 import { StartupType } from '@rocket.chat/apps-engine/definition/scheduler';
 import { AppConfig } from './src/lib/config';
 
@@ -83,13 +83,16 @@ export class TimeOffApp extends App {
             const room = await read.getRoomReader().getByName(this.offLogRoom);
 
             const date = new Date();
-            let tomorrow = date.setDate(date.getDate() + 1);
-            if (date.getDay() === 0) {
-                tomorrow = date.setDate(date.getDate() + 1);
+            let nextWeekDayCount = 1;
+            if (date.getDay() === 5) {
+                nextWeekDayCount = 3;
             }
             if (date.getDay() === 6) {
-                tomorrow = date.setDate(date.getDate() + 2);
+                nextWeekDayCount = 2;
             }
+
+            const tomorrow = date.setDate(date.getDate() + nextWeekDayCount);
+            const tomorrowFormated = convertTimestampToDate(tomorrow);
 
             // Fallback value for inputs
             const defaultPeriod = offType === RequestType.OFF || offType === RequestType.WFH
@@ -106,7 +109,7 @@ export class TimeOffApp extends App {
             const formData = {
                 startDate: state.inputData[`${offType}StartDate`]
                     ? convertDateToTimestamp(state.inputData[`${offType}StartDate`])
-                    : tomorrow,
+                    : convertDateToTimestamp(tomorrowFormated),
                 period: state.inputData[`${offType}Period`] || defaultPeriod,
                 duration: roundToHalf(+state.inputData[`${offType}Duration`] || defaultDuration),
                 reason: state.inputData[`${offType}Reason`],

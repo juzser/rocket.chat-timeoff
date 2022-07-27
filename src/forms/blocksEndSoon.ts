@@ -7,13 +7,14 @@ import { convertTimestampToDate } from "../lib/helpers";
 
 export function endSoonBlockBuilder(block: BlockBuilder) {
     const date = new Date();
-    let tomorrow = date.setDate(date.getDate() + 1);
-    if (date.getDay() === 0) {
-        tomorrow = date.setDate(date.getDate() + 1);
+    let nextWeekDayCount = 1;
+    if (date.getDay() === 5) {
+        nextWeekDayCount = 3;
     }
     if (date.getDay() === 6) {
-        tomorrow = date.setDate(date.getDate() + 2);
+        nextWeekDayCount = 2;
     }
+    const tomorrow = date.setDate(date.getDate() + nextWeekDayCount);
     const tomorrowFormated = convertTimestampToDate(tomorrow);
 
     // Add Fields
