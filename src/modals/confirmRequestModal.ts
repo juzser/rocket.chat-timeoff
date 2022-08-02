@@ -222,7 +222,12 @@ export async function confirmRequestModal({ type, modify, formData, remaining, c
     }
 
     return {
-        id: 'confirmRequestOff',
+        id: `confirmRequestOff--${JSON.stringify({
+            warningList,
+            formData,
+            type,
+            msgData,
+        })}`,
         title: block.newPlainTextObject(lang.confirmRequestModal.heading),
         submit: block.newButtonElement({
             text: block.newPlainTextObject(lang.common.confirm),

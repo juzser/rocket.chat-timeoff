@@ -58,7 +58,14 @@ export class TimeOff {
             limitLateDuration: this.app.limitLateDuration,
         });
 
-        await modify.getUiController().openModalView(modal, { triggerId }, sender);
+        try {
+            this.app.getLogger().info(`${sender.username} requested ${requestType}`);
+            setTimeout(async () => {
+                await modify.getUiController().openModalView(modal, { triggerId }, sender)
+            }, 300);
+        } catch (err) {
+            throw err;
+        }
     }
 
     // Final request submit - After confirmed
@@ -73,11 +80,16 @@ export class TimeOff {
         persis: IPersistence;
     }) {
         // Display message in log room
-        const logRoom = await read.getRoomReader().getByName(this.app.offLogRoom);
         const user = await read.getUserReader().getByUsername(sender);
 
-        if (!logRoom || !user) {
-            throw ('Room or user not found');
+        this.app.getLogger().info(this.app.offLogRoom);
+
+        if (!this.app.offLogRoom || !user) {
+            throw 'Room or user not found';
+        }
+
+        if (!formData) {
+            throw 'There is no data';
         }
 
         const messageLogBlock = modify.getCreator().getBlockBuilder();
@@ -90,17 +102,23 @@ export class TimeOff {
             warningList,
         });
 
+        this.app.getLogger().info(messageLogBlock);
+
         const messageLogId = await sendMessage({
             app: this.app,
             modify,
-            room: logRoom,
+            room: this.app.offLogRoom,
             blocks: messageLogBlock,
             avatar: AppConfig.offIcon,
         });
 
+        this.app.getLogger().info(`before messageLogId: ${messageLogId}`);
+
         if (!messageLogId) {
-            throw ('Error sending message');
+            throw 'Error sending message';
         }
+
+        this.app.getLogger().info(`messageLogId: ${messageLogId}`);
 
         // Save to association
         const logData: IOffLog = {
@@ -118,6 +136,8 @@ export class TimeOff {
         }
 
         await createOffLog(persis, logData);
+
+        this.app.getLogger().info(`Done create off log ${logData}`);
 
         // Create schedule job to notice in log room
         const listSchedule = await getScheduleData(read);
@@ -202,9 +222,8 @@ export class TimeOff {
         }
 
         // Send log message
-        const logRoom = await read.getRoomReader().getByName(this.app.offLogRoom);
 
-        if (!logRoom) {
+        if (!this.app.offLogRoom) {
             return;
         }
 
@@ -218,7 +237,7 @@ export class TimeOff {
         return await sendMessage({
             app: this.app,
             modify,
-            room: logRoom,
+            room: this.app.offLogRoom,
             blocks: messageLogBlock,
             avatar: AppConfig.offLogIcon,
         });

@@ -36,7 +36,7 @@ export class TimeOffApp extends App {
     public botUsername: string;
     public botUser: IUser;
     public checkinRoom: string;
-    public offLogRoom: string;
+    public offLogRoom: IRoom;
     public dayoffPerMonth: number;
     public totalWfhDays: number;
     public checkinTime: { morning: string, afternoon: string };
@@ -80,7 +80,6 @@ export class TimeOffApp extends App {
             const { requestOff: {
                 offType,
             }} = state;
-            const room = await read.getRoomReader().getByName(this.offLogRoom);
 
             const date = new Date();
             let nextWeekDayCount = 1;
@@ -95,7 +94,7 @@ export class TimeOffApp extends App {
             const tomorrowFormated = convertTimestampToDate(tomorrow);
 
             // Fallback value for inputs
-            const defaultPeriod = offType === RequestType.OFF || offType === RequestType.WFH
+            const defaultPeriod = (offType === RequestType.OFF || offType === RequestType.WFH)
                 ? TimePeriod.DAY
                 : (offType === RequestType.LATE
                     ? TimePeriod.MORNING
@@ -116,7 +115,7 @@ export class TimeOffApp extends App {
             };
 
             try {
-                await this.timeoff.submitFormData({ sender: data.user, room: room as IRoom, requestType: offType, triggerId: data.triggerId, read, persis, modify, formData });
+                await this.timeoff.submitFormData({ sender: data.user, room: this.offLogRoom, requestType: offType, triggerId: data.triggerId, read, persis, modify, formData });
             } catch (err) {
                 return context.getInteractionResponder().viewErrorResponse({
                     viewId: data.view.id,
@@ -125,13 +124,22 @@ export class TimeOffApp extends App {
             }
         }
 
-        if (data.view.id === 'confirmRequestOff') {
+        if (data.view.id.startsWith('confirmRequestOff')) {
+            // const { warningList, formData, type, msgData }: {
+            //     type: RequestType;
+            //     msgData: IOffMessageData;
+            //     warningList: IOffWarning[];
+            //     formData: IFormData;
+            // } = JSON.parse(data.view.submit?.value || '{}');
+
+            const dataId = JSON.parse(data.view.id.split('--')[1]);
+
             const { warningList, formData, type, msgData }: {
                 type: RequestType;
                 msgData: IOffMessageData;
                 warningList: IOffWarning[];
                 formData: IFormData;
-            } = JSON.parse(data.view.submit?.value || '{}');
+            } = dataId || {};
 
             try {
                 await this.timeoff.submitRequest({
@@ -143,7 +151,7 @@ export class TimeOffApp extends App {
                     warningList,
                 });
             } catch (err) {
-                return await notifyUser({ app: this, message: err, user: data.user, room: data.room as IRoom, modify });
+                await notifyUser({ app: this, message: err, user: data.user, room: data.room || this.offLogRoom, modify });
             }
         }
 
@@ -222,9 +230,13 @@ export class TimeOffApp extends App {
             return false;
         }
 
-        this.offLogRoom = await environmentRead.getSettings().getValueById('timeoff_room');
-        if (!this.offLogRoom) {
+        const offLogRoomName = await environmentRead.getSettings().getValueById('timeoff_room');
+        if (!offLogRoomName) {
             return false;
+        }
+        const offLogRoom = await this.getAccessors().reader.getRoomReader().getByName(offLogRoomName);
+        if (offLogRoom) {
+            this.offLogRoom = offLogRoom;
         }
 
         // Admin users
@@ -291,28 +303,38 @@ export class TimeOffApp extends App {
                 break;
             case 'timeoff_room':
                 if (setting.value) {
-                    this.offLogRoom = setting.value;
+                    const offLogRoomName = setting.value;
+                    const offLogRoom = await this.getAccessors().reader.getRoomReader().getByName(offLogRoomName);
+                    if (offLogRoom) {
+                        this.offLogRoom = offLogRoom;
+                    }
                 }
+                break;
             case 'increase_dayoff_per_month':
                 if (setting.value) {
                     this.dayoffPerMonth = +(setting.value);
                 }
+                break;
             case 'total_wfh_per_month':
                 if (setting.value) {
                     this.totalWfhDays = +(setting.value);
                 }
+                break;
             case 'requestLate_before':
                 if (setting.value) {
                     this.requestLateBefore = +(setting.value);
                 }
+                break;
             case 'requestOff_before':
                 if (setting.value) {
                     this.requestOffBefore = +(setting.value);
                 }
+                break;
             case 'requestWfh_before':
                 if (setting.value) {
                     this.requestWfhBefore = +(setting.value);
                 }
+                break;
             case 'limit_late_time':
                 if (setting.value) {
                     this.limitLateDuration = +(setting.value);

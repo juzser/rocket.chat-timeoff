@@ -21,9 +21,7 @@ export async function StatsCommand({ app, context, read, persis, modify, params 
         return;
     }
 
-    const room = await read.getRoomReader().getByName(app.offLogRoom);
-
-    const members = room ? await read.getRoomReader().getMembers(room.id) : [];
+    const members = app.offLogRoom ? await read.getRoomReader().getMembers(app.offLogRoom.id) : [];
 
     const activeMembers = members.filter((member) => {
         return member.isEnabled && member.type === 'user' && !member.roles.includes('guest');
