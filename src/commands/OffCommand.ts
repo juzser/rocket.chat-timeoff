@@ -18,9 +18,9 @@ export class OffCommand implements ISlashCommand {
     private CommandEnum = {
         Help: 'help',
         Request: 'request',
-        Extra: 'extra',
-        Tick: 'tick',
-        Stats: 'stats',
+        Extra: 'extra', // /off extra admin wfh -1
+        Tick: 'tick', // /off tick 31/01/2022
+        Stats: 'stats', // /off stats 2022
     };
 
     constructor(private readonly app: AppClass) {}

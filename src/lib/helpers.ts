@@ -261,21 +261,51 @@ export function roundToHalf(num: number): number {
 /**
  * Get total day off by calculate the month of the year
  */
-export function getTotalDayOff(dayoffPerMonth: number, full?: boolean): number {
-    const currentDate = new Date();
-    const currentMonth = full ? 11 : currentDate.getMonth();
-
-    return dayoffPerMonth * (currentMonth + 1);
+export function getTotalDayOff(dayoffPerMonth: number, year: number, userCreatedDate: Date): number {
+    return getTotal(dayoffPerMonth, year, userCreatedDate);
 }
 
 /**
  * Get total day off by calculate the month of the year
  */
-export function getTotalDayWfh(wfhPerMonth: number, full?: boolean): number {
-    const currentDate = new Date();
-    const currentMonth = full ? 11 : currentDate.getMonth();
+export function getTotalDayWfh(wfhPerMonth: number, year: number, userCreatedDate: Date): number {
+    return getTotal(wfhPerMonth, year, userCreatedDate);
+}
 
-    return wfhPerMonth * (currentMonth + 1);
+function getTotal(perMonth: number, year: number, userCreatedDate: Date): number {
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+
+    const userCreatedMonth = userCreatedDate.getMonth();
+    const userCreatedYear = userCreatedDate.getFullYear();
+
+    // If it's past year
+    // Ex: user created date 07/2019
+    //     year compare 2019
+    // =>  total = 12 - 7 + 1 = 6
+    // else total = 12
+    if (year < currentYear) { // Past
+        if (year < userCreatedYear) {
+            return 0;
+        }
+
+        return year === userCreatedYear
+            ? perMonth * (11 - userCreatedMonth + 1)
+            : perMonth * 12;
+    }
+
+    // If it's future year
+    if (year > currentYear) {
+        return 0;
+    }
+
+    // If it's current year
+    if (year === userCreatedYear) {
+        return perMonth * (currentMonth - userCreatedMonth + 1);
+    }
+
+    return perMonth * (currentMonth + 1);
 }
 
 /**

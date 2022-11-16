@@ -184,8 +184,15 @@ export async function getRemainingOff({ dayoffPerMonth, wfhPerMonth, limitLateDu
     const currentYear = new Date().getFullYear();
     const yearLog = year ? year : currentYear;
 
-    const totalDayOff = getTotalDayOff(dayoffPerMonth, year && year < currentYear ? true : false);
-    const totalWfh = getTotalDayWfh(wfhPerMonth, year && year < currentYear ? true : false);
+    const user = await read.getUserReader().getById(userId);
+    let userCreatedDate;
+
+    if (user) {
+        userCreatedDate = new Date(user.createdAt);
+    }
+
+    const totalDayOff = getTotalDayOff(dayoffPerMonth, yearLog, userCreatedDate);
+    const totalWfh = getTotalDayWfh(wfhPerMonth, yearLog, userCreatedDate);
     const offLog = await getOffLogByUser(userId, read);
     const memberInfo = await getOffMemberByUser(userId, yearLog, persis, read);
 
