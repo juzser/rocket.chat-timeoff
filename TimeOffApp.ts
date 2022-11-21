@@ -26,7 +26,6 @@ import { settings } from './src/lib/settings';
 import { requestModal } from './src/modals/requestModal';
 import { TimeOff } from './src/classes/TimeOff';
 import { convertDateToTimestamp, convertTimestampToDate, notifyUser, roundToHalf } from './src/lib/helpers';
-import { StartupType } from '@rocket.chat/apps-engine/definition/scheduler';
 import { AppConfig } from './src/lib/config';
 
 export class TimeOffApp extends App {
@@ -125,13 +124,6 @@ export class TimeOffApp extends App {
         }
 
         if (data.view.id.startsWith('confirmRequestOff')) {
-            // const { warningList, formData, type, msgData }: {
-            //     type: RequestType;
-            //     msgData: IOffMessageData;
-            //     warningList: IOffWarning[];
-            //     formData: IFormData;
-            // } = JSON.parse(data.view.submit?.value || '{}');
-
             const dataId = JSON.parse(data.view.id.split('--')[1]);
 
             const { warningList, formData, type, msgData }: {
@@ -175,6 +167,17 @@ export class TimeOffApp extends App {
                 const modal = await requestModal({ app: this, user, modify, read, persis, requestType: data.value });
                 return context.getInteractionResponder().updateModalViewResponse(modal);
             }
+
+            case 'logActions':
+                try {
+                    if (data.value === 'undo') {
+                        await this.timeoff.undoRequest({ data, read, modify, persis });
+                    }
+                } catch (e) {
+                    this.getLogger().error(e);
+                    await notifyUser({ app: this, message: e, user: data.user, room: room as IRoom, modify });
+                }
+                break;
         }
 
         return {

@@ -4,7 +4,7 @@ import { SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashco
 import { TimeOffApp as appClass } from '../../TimeOffApp';
 import { RequestType } from '../interfaces/IRequestLog';
 import { notifyUser } from '../lib/helpers';
-import { createOffMember, getOffMemberByUser, updateOffMember } from '../lib/services';
+import { getOffMemberByUser, updateOffMember } from '../lib/services';
 
 // Open modal to request time off
 export async function ExtraOffCommand({ app, context, read, persis, modify, params }: {
@@ -46,27 +46,26 @@ export async function ExtraOffCommand({ app, context, read, persis, modify, para
     const userOffInfo = await getOffMemberByUser(user.id, countYear, persis, read);
 
     // Create new record if not exists or update existed one
-    if (!userOffInfo) {
-        await createOffMember(user.id, countYear, persis, {
-            id: user.id,
-            offExtra: type === RequestType.OFF ? parseFloat(count) : 0,
-            wfhExtra: type === RequestType.WFH ? parseFloat(count) : 0,
-            lateExtra: type === RequestType.LATE || type === RequestType.END_SOON ? parseInt(count, 10) : 0,
-        });
-    } else {
-        await updateOffMember(user.id, countYear, persis, {
-            id: user.id,
-            offExtra: type === RequestType.OFF
-                ? parseFloat(count) + userOffInfo.offExtra
-                : userOffInfo.offExtra,
-            wfhExtra: type === RequestType.WFH
-                ? parseFloat(count) + userOffInfo.wfhExtra
-                : userOffInfo.wfhExtra,
-            lateExtra: type === RequestType.LATE || type === RequestType.END_SOON
-                ? parseInt(count, 10) + userOffInfo.lateExtra
-                : userOffInfo.lateExtra,
-        });
+    const offExtraData = {
+        id: user.id,
+        offExtra: 0,
+        wfhExtra: 0,
+        lateExtra: 0,
+    };
+
+    if (type === RequestType.OFF) {
+        offExtraData.offExtra = +count + (userOffInfo?.offExtra || 0);
     }
+
+    if (type === RequestType.WFH) {
+        offExtraData.wfhExtra = +count + (userOffInfo?.wfhExtra || 0);
+    }
+
+    if (type === RequestType.LATE || type === RequestType.END_SOON) {
+        offExtraData.lateExtra = +count + (userOffInfo?.lateExtra || 0);
+    }
+
+    await updateOffMember(user.id, countYear, persis, offExtraData);
 
     return await notifyUser({ app, user: context.getSender(), room: context.getRoom(), message: 'Updated!', modify })
 }

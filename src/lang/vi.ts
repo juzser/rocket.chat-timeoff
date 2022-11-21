@@ -10,6 +10,7 @@ export const vi = {
         statusEnded: ':zzz:',
         requestLabel: 'Xin phép',
         other: 'Khác',
+        undo: 'Hủy xin phép',
     },
 
     day: {
@@ -43,6 +44,9 @@ export const vi = {
             reason: 'Hãy nhập lý do (tối thiểu 10 ký tự)',
             period: 'Chưa chọn thời gian',
         },
+        notAuthor: ':warning: Bạn không phải người tạo request này.',
+        notActive: ':warning: Request này đã bị huỷ.',
+        notPending: ':warning: Request này đã được thực hiện. Không thể huỷ.',
     },
 
     type: {
@@ -152,6 +156,8 @@ export const vi = {
         warningOverTotal: (total?: number) => `Quá số ngày phép${total ? ` (*${total}* ngày phép)` : ''}.`,
         warningLateTick: 'Đi muộn/Về sớm phải tích một tích trên bảng.',
         warningLateRequest: 'Xin phép muộn.',
+        requestCancelled: (author: string) => `:speech_balloon: *${author}* đã hủy yêu cầu.`,
+        cancelledSuccessful: 'Hủy yêu cầu thành công.',
     },
 
     dailyLogMessage: {
@@ -182,5 +188,10 @@ export const vi = {
             wfh?: number,
             late?: number,
         }) => `*${username}:* còn *${off}* ngày nghỉ | *${wfh}* ngày WFH | *${late}* phút muộn`,
+    },
+
+    memberLogs: {
+        heading: 'Lịch sử xin phép',
+        caption: (user: string, off: number, wfh: number) => `*${user}* còn :beach: *${off}* ngày nghỉ phép và :house_with_garden: *${wfh}* ngày WFH trong năm.`,
     },
 };

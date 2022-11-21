@@ -3,18 +3,16 @@ import { SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashco
 import { ButtonStyle } from '@rocket.chat/apps-engine/definition/uikit';
 
 import { TimeOffApp as appClass } from '../../TimeOffApp';
-import { IOffWarning, RequestType, tickLogData } from '../interfaces/IRequestLog';
-import { lang } from '../lang/index';
+import { RequestType, tickLogData } from '../interfaces/IRequestLog';
 import { notifyUser } from '../lib/helpers';
 import { getOffLogByDate } from '../lib/services';
 import { tickBoardModal } from '../modals/tickBoardModal';
 
 // Open modal to request time off
-export async function TickBoardCommand({ app, context, read, persis, modify, params }: {
+export async function TickBoardCommand({ app, context, read, modify, params }: {
     app: appClass;
     context: SlashCommandContext;
     read: IRead;
-    persis: IPersistence;
     modify: IModify
     params: string[];
 }): Promise<void> {

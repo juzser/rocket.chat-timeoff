@@ -67,16 +67,74 @@ export async function getCurrentTimeLog(room: IRoom, read: IRead): Promise<ITime
 /**
  * Store the day off log
  */
-export async function createOffLog(persis: IPersistence, data: IOffLog): Promise<string> {
+export async function createOffLog(persis: IPersistence, data: IOffLog): Promise<boolean> {
     // Save to store
-    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_LOG_KEY);
-    return persis.createWithAssociation(data, association);
+    const year = new Date(data.startDate).getFullYear();
+
+    const associations: RocketChatAssociationRecord[] = [
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_LOG_KEY),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `off-year-${year}`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MESSAGE, data.msg_id),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.USER, data.user_id),
+    ];
+
+    try {
+        await persis.updateByAssociations(associations, data, true);
+    } catch (err) {
+        console.warn(err);
+        return false;
+    }
+
+    return true;
+    // const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_LOG_KEY);
+    // return persis.createWithAssociation(data, association);
+}
+
+/**
+ * Update off logs
+ */
+export async function updateOffLog(persis: IPersistence, data: IOffLog): Promise<boolean> {
+    const year = new Date(data.startDate).getFullYear();
+
+    const associations = [
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_LOG_KEY),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `off-year-${year}`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MESSAGE, data.msg_id),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.USER, data.user_id),
+    ];
+    try {
+        await persis.updateByAssociations(associations, data, false);
+    } catch (err) {
+        console.warn(err);
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Remove off log by id
+ */
+export async function removeOffLogByMsgId(persis: IPersistence, msgId: string) {
+    const associations = [
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_LOG_KEY),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MESSAGE, msgId),
+    ];
+
+    try {
+        await persis.removeByAssociations(associations);
+    } catch (err) {
+        console.warn(err);
+        return false;
+    }
+
+    return true;
 }
 
 /**
  * Get all off logs
  */
- export async function getOffLogs(read: IRead): Promise<IOffLog[]> {
+export async function getOffLogs(read: IRead): Promise<IOffLog[]> {
     const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_LOG_KEY);
     const data = await read.getPersistenceReader().readByAssociation(association);
 
@@ -84,34 +142,69 @@ export async function createOffLog(persis: IPersistence, data: IOffLog): Promise
 }
 
 /**
- * Get day off log data by user ID from association
+ * Get all off logs by user id
  */
-export async function getOffLogByUser(userId: string, read: IRead): Promise<IOffLog[] | null> {
-    const data = await getOffLogs(read);
+export async function getOffLogsByUserId(userId: string, read: IRead): Promise<IOffLog[]> {
+    const associations = [
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_LOG_KEY),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.USER, userId),
+    ];
 
-    if (!data.length) {
-        return null;
-    }
+    const data = await read.getPersistenceReader().readByAssociations(associations);
 
-    const results = data.filter((item: IOffLog) => item.user_id === userId);
+    return data as IOffLog[];
+}
 
-    return results as IOffLog[];
+/**
+ * Get off logs by message id
+ */
+export async function getOffLogsByMsgId(msgId: string, read: IRead): Promise<IOffLog> {
+    const associations = [
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_LOG_KEY),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MESSAGE, msgId),
+    ];
+
+    const data = await read.getPersistenceReader().readByAssociations(associations);
+
+    return data[0] as IOffLog;
+}
+
+/**
+ * Get off log by year
+ */
+export async function getOffLogsByYear(year: number, read: IRead): Promise<IOffLog[]> {
+    const associations = [
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_LOG_KEY),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `off-year-${year}`),
+    ];
+
+    const data = await read.getPersistenceReader().readByAssociations(associations);
+
+    return data as IOffLog[];
 }
 
 /**
  * Get off log by the date
  */
 export async function getOffLogByDate(read: IRead, inputDate?: string): Promise<IOffLog[] | null> {
-    const data = await getOffLogs(read);
+    const currentDate = new Date();
+
+    // Split to parts [dd, mm, yyyy]
+    const inputDateParts = inputDate
+        ? inputDate.split('/')
+        : [currentDate.getMonth() + 1, currentDate.getFullYear()];
+
+    const year = inputDateParts.length === 3
+        ? +inputDateParts[2]
+        : inputDateParts.length === 2
+            ? +inputDateParts[1]
+            : +inputDateParts[0];
+
+    const data = await getOffLogsByYear(year, read);
 
     if (!data.length) {
         return null;
     }
-
-    const currentDate = new Date();
-    const inputDateParts = inputDate
-        ? inputDate.split('/')
-        : [currentDate.getMonth() + 1, currentDate.getFullYear()];
 
     const results = data.filter((item: IOffLog) => {
         const date = convertTimestampToDate(item.createdDate);
@@ -120,30 +213,18 @@ export async function getOffLogByDate(read: IRead, inputDate?: string): Promise<
         // dd/mm/yyyy
         if (inputDateParts.length === 3) {
             return +dateParts[0] === +inputDateParts[0]
-                && +dateParts[1] === +inputDateParts[1]
-                && +dateParts[2] === +inputDateParts[2];
+                && +dateParts[1] === +inputDateParts[1];
         }
 
         // mm/yyyy
         if (inputDateParts.length === 2) {
-            return +dateParts[1] === +inputDateParts[0]
-                && +dateParts[2] === +inputDateParts[1];
+            return +dateParts[1] === +inputDateParts[0];
         }
 
-        // yyyy
-        return +dateParts[2] === +inputDateParts[0];
+        return true;
     });
 
     return results as IOffLog[];
-}
-
-/**
- * Store the off information of member
- */
-export async function createOffMember(userId: string, year: number, persis: IPersistence, data: IMemberExtra): Promise<string> {
-    // Save to store
-    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${OFF_MEMBER_KEY}_${userId}_${year}`);
-    return persis.createWithAssociation(data, association);
 }
 
 /**
@@ -152,7 +233,7 @@ export async function createOffMember(userId: string, year: number, persis: IPer
 export async function updateOffMember(userId: string, year: number, persis: IPersistence, data: IMemberExtra): Promise<string> {
     // Save to store
     const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${OFF_MEMBER_KEY}_${userId}_${year}`);
-    return persis.updateByAssociation(association, data);
+    return persis.updateByAssociation(association, data, true);
 }
 
 /**
@@ -193,7 +274,7 @@ export async function getRemainingOff({ dayoffPerMonth, wfhPerMonth, limitLateDu
 
     const totalDayOff = getTotalDayOff(dayoffPerMonth, yearLog, userCreatedDate);
     const totalWfh = getTotalDayWfh(wfhPerMonth, yearLog, userCreatedDate);
-    const offLog = await getOffLogByUser(userId, read);
+    const offLog = await getOffLogsByUserId(userId, read);
     const memberInfo = await getOffMemberByUser(userId, yearLog, persis, read);
 
     const total = {
@@ -234,19 +315,11 @@ export async function getRemainingOff({ dayoffPerMonth, wfhPerMonth, limitLateDu
 }
 
 /**
- * Create schedule data
- */
-export async function createScheduleData(data: IScheduleData[], persis: IPersistence): Promise<string> {
-    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_SCHEDULE_KEY);
-    return persis.createWithAssociation(data, association);
-}
-
-/**
  * Update schedule data
  */
 export async function updateScheduleData(data: IScheduleData[], persis: IPersistence): Promise<string> {
     const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_SCHEDULE_KEY);
-    return persis.updateByAssociation(association, data);
+    return persis.updateByAssociation(association, data, true);
 }
 
 /**

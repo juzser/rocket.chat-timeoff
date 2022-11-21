@@ -5,6 +5,8 @@ import { BlockBuilder } from '@rocket.chat/apps-engine/definition/uikit';
 import { IUser } from '@rocket.chat/apps-engine/definition/users';
 
 import { TimeOffApp as appClass } from '../../TimeOffApp';
+import { IOffMessageData, RequestType, TimePeriod } from '../interfaces/IRequestLog';
+import { lang } from '../lang/index';
 import { AppConfig } from './config';
 
 /**
@@ -314,4 +316,132 @@ function getTotal(perMonth: number, year: number, userCreatedDate: Date): number
 export function getTotalHours(time: string): number {
     const timeArray = time.split(':');
     return parseInt(timeArray[0], 10) + parseInt(timeArray[1], 10) / 60;
+}
+
+/**
+ * Check a request is pending or not
+ *
+ * Execute time is the time when the request is executed.
+ *
+ * Off/WFH
+ * Morning: startTime + checkinTimeMorning
+ * Afternoon: startTime + checkinTimeAfternoon
+ *
+ * Late
+ * Morning: startTime + checkinTimeMorning
+ * Afternoon: startTime + checkinTimeAfternoon
+ *
+ * endSoon
+ * Morning: startTime + checkoutTimeMorning - duration
+ * Afternoon: startTime + checkoutTimeAfternoon - duration
+ *
+ * One request is pending if currentTime < executeTime
+ */
+export function checkIsPendingRequest({app, startDate, period, type, duration}: {
+    app: appClass,
+    startDate: number,
+    period: TimePeriod,
+    type: RequestType,
+    duration: number,
+}) {
+    const hourMs = 60 * 60 * 1000;
+    const checkinTimeMorning = (getTotalHours(app.checkinTime.morning) - AppConfig.timezoneOffset) * hourMs;
+    const checkinTimeAfternoon = (getTotalHours(app.checkinTime.afternoon) - AppConfig.timezoneOffset) * hourMs;
+    const checkoutTimeMorning = (getTotalHours(app.checkoutTime.morning) - AppConfig.timezoneOffset) * hourMs;
+    const checkoutTimeAfternoon = (getTotalHours(app.checkoutTime.afternoon) - AppConfig.timezoneOffset) * hourMs;
+
+    const currentTime = new Date().getTime();
+
+    let isPending = false;
+
+    if (type === RequestType.OFF || type === RequestType.WFH || type === RequestType.LATE) {
+        if (period === TimePeriod.MORNING || period === TimePeriod.DAY) {
+            isPending = currentTime < startDate + checkinTimeMorning;
+        }
+
+        if (period === TimePeriod.AFTERNOON) {
+            isPending = currentTime < startDate + checkinTimeAfternoon;
+        }
+    }
+
+    if (type === RequestType.END_SOON) {
+        if (period === TimePeriod.MORNING) {
+            isPending = currentTime < startDate + checkoutTimeMorning - (duration * 60 * 1000);
+        }
+
+        if (period === TimePeriod.AFTERNOON) {
+            isPending = currentTime < startDate + checkoutTimeAfternoon - (duration * 60 * 1000);
+        }
+    }
+
+    return isPending;
+}
+
+/**
+ * Build off message data
+ */
+export function buildOffMessageData({ startDate, period, type, duration }: {
+    startDate: number,
+    period: TimePeriod,
+    type: RequestType,
+    duration: number,
+}): IOffMessageData {
+    const startDateFormatted = convertTimestampToDate(startDate);
+    const startDayName = lang.day[new Date(startDate).getDay()];
+
+    const msgData: IOffMessageData = {
+        startDate: startDateFormatted,
+        startDay: startDayName,
+        startDateDayLight: period,
+        duration,
+    };
+
+    if (type === RequestType.OFF || type === RequestType.WFH) {
+        // If the duration is 1 day and start in the morning,
+        // so the daylight should be whole day
+        const startDateDayLight = (period === TimePeriod.MORNING && duration > 0.5)
+            ? TimePeriod.DAY
+            : period;
+
+        // if the type is off or wfh, so it should be milliseconds count by day.
+        // If duration is large than 1 day & in the morning, so it should be counted until 11:59:59;
+        // Unless, it's the next day.
+        let durationMilliseconds = duration * 24 * 60 * 60 * 1000 - (
+            duration > 1 && startDateDayLight !== TimePeriod.AFTERNOON ? 1000 : 0
+        );
+
+        // Ignore weekends
+        // If the off day passes throught the weekend, so the duration should be increase 2 days multiple with number of week it passed.
+        const startDateParsed = new Date(startDate);
+        const startDateDay = startDateParsed.getDay();
+
+        if ((startDateDay + duration) > 6) {
+            const weekendTimes = Math.floor((startDateDay + duration) / 5);
+            durationMilliseconds += weekendTimes * 2 * 24 * 60 * 60 * 1000;
+        }
+
+        // Daylight:
+        // Integer (1, 2, 3, ...) means: start from afternoon - end by the end of morning
+        //                        start from morning/day - end by the end of the day
+        // Float (1.5, 2.5, ...) means: start from afternoon - end by the end of the day
+        //                        start from morning/day - end by the end of the morning
+        let endDate, endDateDayLight;
+        if (duration > 1 || (duration === 1 && period === TimePeriod.AFTERNOON)) {
+            endDate = convertTimestampToDate(startDate + durationMilliseconds);
+            endDateDayLight = duration % 1 === 0
+                ? (startDateDayLight === TimePeriod.AFTERNOON
+                    ? TimePeriod.MORNING
+                    : TimePeriod.DAY)
+                : (startDateDayLight === TimePeriod.AFTERNOON
+                    ? TimePeriod.DAY
+                    : TimePeriod.MORNING);
+        }
+
+        // Store the data for the message
+        msgData.endDate = endDate;
+        msgData.endDay = lang.day[new Date(startDate + durationMilliseconds).getDay()];
+        msgData.endDateDayLight = endDateDayLight;
+    }
+
+    return msgData;
 }

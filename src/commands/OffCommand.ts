@@ -6,8 +6,10 @@ import { ExtraOffCommand } from './ExtraOff';
 
 import { HelpCommand } from './Help';
 import { StatsCommand } from './OffStats';
+import { LogsCommand } from './OffLogs';
 import { RequestCommand } from './Request';
 import { TickBoardCommand } from './TickBoard';
+import { MigrateCommand } from './MigrateData';
 
 export class OffCommand implements ISlashCommand {
     public command = 'off';
@@ -21,6 +23,8 @@ export class OffCommand implements ISlashCommand {
         Extra: 'extra', // /off extra admin wfh -1
         Tick: 'tick', // /off tick 31/01/2022
         Stats: 'stats', // /off stats 2022
+        Logs: 'logs', // /off logs username
+        // Migrate: 'migrate', // /off migrate
     };
 
     constructor(private readonly app: AppClass) {}
@@ -36,11 +40,17 @@ export class OffCommand implements ISlashCommand {
                 await ExtraOffCommand({ app: this.app, context, read, persis, modify, params });
                 break;
             case this.CommandEnum.Tick:
-                await TickBoardCommand({ app: this.app, context, read, persis, modify, params });
+                await TickBoardCommand({ app: this.app, context, read, modify, params });
                 break;
             case this.CommandEnum.Stats:
                 await StatsCommand({ app: this.app, context, read, persis, modify, params });
                 break;
+            case this.CommandEnum.Logs:
+                await LogsCommand({ app: this.app, context, read, persis, modify, params });
+                break;
+            // case this.CommandEnum.Migrate:
+            //     await MigrateCommand({ app: this.app, context, read, persis, modify, params });
+            //     break;
 
             default:
                 await RequestCommand({ app: this.app, context, read, persis, modify });

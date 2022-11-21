@@ -1,11 +1,10 @@
 import { IModify } from '@rocket.chat/apps-engine/definition/accessors';
-import { IRoom } from '@rocket.chat/apps-engine/definition/rooms';
 import { ButtonStyle } from '@rocket.chat/apps-engine/definition/uikit';
 import { IUIKitModalViewParam } from '@rocket.chat/apps-engine/definition/uikit/UIKitInteractionResponder';
 
-import { IOffMessageData, IOffWarning, RequestType, TimePeriod, WarningType, IFormData, IMemberOffRemain } from '../interfaces/IRequestLog';
+import { IOffWarning, RequestType, TimePeriod, WarningType, IFormData, IMemberOffRemain } from '../interfaces/IRequestLog';
 import { lang } from '../lang/index';
-import { convertTimestampToDate, getTotalHours } from '../lib/helpers';
+import { buildOffMessageData, getTotalHours } from '../lib/helpers';
 import { AppConfig } from '../lib/config';
 
 export async function confirmRequestModal({ type, modify, formData, remaining, checkinTime, checkoutTime, requestOffBefore, requestWfhBefore, requestLateBefore, limitLateDuration }: {
@@ -24,64 +23,10 @@ export async function confirmRequestModal({ type, modify, formData, remaining, c
 
     const { startDate, period, duration } = formData;
 
-    const startDateFormatted = convertTimestampToDate(startDate);
-    const startDayName = lang.day[new Date(startDate).getDay()];
-
     const warningList: IOffWarning[] = [];
-    let msgData: IOffMessageData | undefined;
+    const msgData = buildOffMessageData({ startDate, period, type, duration});
 
     if (type === RequestType.OFF || type === RequestType.WFH) {
-        // If the duration is 1 day and start in the morning,
-        // so the daylight should be whole day
-        const startDateDayLight = (period === TimePeriod.MORNING && duration > 0.5)
-            ? TimePeriod.DAY
-            : period;
-
-        // if the type is off or wfh, so it should be milliseconds count by day.
-        // If duration is large than 1 day & in the morning, so it should be counted until 11:59:59;
-        // Unless, it's the next day.
-        let durationMilliseconds = duration * 24 * 60 * 60 * 1000 - (
-            duration > 1 && startDateDayLight !== TimePeriod.AFTERNOON ? 1000 : 0
-        );
-
-        // Ignore weekends
-        // If the off day passes throught the weekend, so the duration should be increase 2 days multiple with number of week it passed.
-        const startDateParsed = new Date(startDate);
-        const startDateDay = startDateParsed.getDay();
-
-        if ((startDateDay + duration) > 6) {
-            const weekendTimes = Math.floor((startDateDay + duration) / 5);
-            durationMilliseconds += weekendTimes * 2 * 24 * 60 * 60 * 1000;
-        }
-
-        // Daylight:
-        // Integer (1, 2, 3, ...) means: start from afternoon - end by the end of morning
-        //                        start from morning/day - end by the end of the day
-        // Float (1.5, 2.5, ...) means: start from afternoon - end by the end of the day
-        //                        start from morning/day - end by the end of the morning
-        let endDate, endDateDayLight;
-        if (duration > 1 || (duration === 1 && period === TimePeriod.AFTERNOON)) {
-            endDate = convertTimestampToDate(startDate + durationMilliseconds);
-            endDateDayLight = duration % 1 === 0
-                ? (startDateDayLight === TimePeriod.AFTERNOON
-                    ? TimePeriod.MORNING
-                    : TimePeriod.DAY)
-                : (startDateDayLight === TimePeriod.AFTERNOON
-                    ? TimePeriod.DAY
-                    : TimePeriod.MORNING);
-        }
-
-        // Store the data for the message
-        msgData = {
-            startDate: startDateFormatted,
-            startDay: startDayName,
-            startDateDayLight,
-            duration,
-            endDate,
-            endDay: lang.day[new Date(startDate + durationMilliseconds).getDay()],
-            endDateDayLight,
-        };
-
         // Confirm information
         block.addSectionBlock({
             text: block.newMarkdownTextObject(lang.confirmRequestModal.offOverview({
@@ -90,7 +35,6 @@ export async function confirmRequestModal({ type, modify, formData, remaining, c
                 ...msgData,
             } as any)),
         });
-
 
         // Total remaining day off
         const totalLeft = (type === RequestType.OFF ? remaining.off : remaining.wfh) - duration;
@@ -113,14 +57,6 @@ export async function confirmRequestModal({ type, modify, formData, remaining, c
             warningList.push({ name: WarningType.OVERTOTAL, value: totalLeft, tick: 'red' });
         }
     } else { // Late or End Soon
-        // Confirm information
-        msgData = {
-            startDate: startDateFormatted,
-            startDay: startDayName,
-            startDateDayLight: period,
-            duration,
-        };
-
         block.addSectionBlock({
             text: block.newMarkdownTextObject(lang.confirmRequestModal.lateOverview({
                 user: null,

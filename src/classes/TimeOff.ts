@@ -1,13 +1,14 @@
 import { IModify, IPersistence, IRead } from '@rocket.chat/apps-engine/definition/accessors';
 import { IUser } from '@rocket.chat/apps-engine/definition/users';
+import { IUIKitBlockIncomingInteraction } from '@rocket.chat/apps-engine/definition/uikit/UIKitIncomingInteractionTypes';
 import { TimeOffApp as App } from '../../TimeOffApp';
 import { IOffLog, IOffMessageData, IOffWarning, RequestType, TimePeriod, IFormData, IScheduleLog } from '../interfaces/IRequestLog';
 import { IRoom } from '@rocket.chat/apps-engine/definition/rooms';
 import { lang } from '../lang/index';
 import { confirmRequestModal } from '../modals/confirmRequestModal';
-import { createOffLog, createScheduleData, getRemainingOff, getScheduleData, updateScheduleData } from '../lib/services';
+import { createOffLog, getRemainingOff, getScheduleData, updateScheduleData, getOffLogsByMsgId, removeOffLogByMsgId } from '../lib/services';
 import { offlogBlock } from '../messages/offlogBlock';
-import { convertTimestampToDate, sendMessage } from '../lib/helpers';
+import { buildOffMessageData, checkIsPendingRequest, convertTimestampToDate, notifyUser, sendMessage, updateMessage } from '../lib/helpers';
 import { AppConfig } from '../lib/config';
 import { dailylogBlock } from '../messages/dailylogBlock';
 
@@ -178,6 +179,7 @@ export class TimeOff {
 
             // Build the log
             const logData: IScheduleLog = {
+                msg_id: messageLogId,
                 username: sender,
                 type,
                 period: actualPeriod,
@@ -196,11 +198,110 @@ export class TimeOff {
             }
         }
 
-        if (!listSchedule) {
-            await createScheduleData(newListSchedule, persis);
-        } else {
-            await updateScheduleData(newListSchedule, persis);
+        await updateScheduleData(newListSchedule, persis);
+    }
+
+    public async undoRequest({ data, read, modify, persis }: {
+        data: IUIKitBlockIncomingInteraction,
+        read: IRead,
+        modify: IModify,
+        persis: IPersistence,
+    }) {
+        if (!data.message || !data.message.id || !data.user) {
+            throw lang.error.notAuthor;
         }
+
+        const msgOffLog = await getOffLogsByMsgId(data.message.id, read);
+
+        // No request found
+        if (!msgOffLog) {
+            throw lang.error.notActive;
+        }
+
+        // Not author
+        if (msgOffLog.user_id !== data.user.id) {
+            throw lang.error.notAuthor;
+        }
+
+        const isPending = checkIsPendingRequest({
+            app: this.app,
+            type: msgOffLog.type,
+            startDate: msgOffLog.startDate,
+            period: msgOffLog.period,
+            duration: msgOffLog.duration,
+        });
+
+        this.app.getLogger().info(`isPending: ${isPending}`);
+
+        if (!isPending) {
+            throw lang.error.notPending;
+        }
+
+        // // Remove log
+        await removeOffLogByMsgId(persis, data.message.id);
+
+        const msgData = buildOffMessageData({
+            startDate: msgOffLog.startDate,
+            period: msgOffLog.period,
+            duration: msgOffLog.duration,
+            type: msgOffLog.type,
+        });
+
+        const formData = {
+            startDate: msgOffLog.startDate,
+            period: msgOffLog.period,
+            duration: msgOffLog.duration,
+            reason: msgOffLog.reason,
+        };
+
+        // Rebuild message
+        const messageLogBlock = modify.getCreator().getBlockBuilder();
+        await offlogBlock({
+            username: data.user.username,
+            block: messageLogBlock,
+            type: msgOffLog.type,
+            msgData,
+            formData,
+            warningList: msgOffLog.warningList,
+            isCancelled: true,
+        });
+
+        await updateMessage({
+            app: this.app,
+            modify,
+            messageId: data.message.id,
+            sender: this.app.botUser,
+            blocks: messageLogBlock,
+        });
+
+        // Remove schedule
+        const listSchedule = await getScheduleData(read);
+
+        if (listSchedule) {
+          const newScheduleList = [...listSchedule];
+          const dateScheduleIndex = newScheduleList.findIndex((e) => e.date === convertTimestampToDate(formData.startDate));
+
+          if (dateScheduleIndex !== -1) {
+            const newScheduleLogs = newScheduleList[dateScheduleIndex].logs.filter((e) => e.msg_id !== data.message?.id);
+
+            // Remove the date if no log left
+            if (newScheduleLogs.length === 0) {
+              newScheduleList.splice(dateScheduleIndex, 1);
+            } else {
+              newScheduleList[dateScheduleIndex].logs = newScheduleLogs;
+            }
+
+            await updateScheduleData(newScheduleList, persis);
+          }
+        }
+
+        await notifyUser({
+            app: this.app,
+            message: lang.offLogMessage.cancelledSuccessful,
+            user: data.user,
+            room: data.room as IRoom,
+            modify,
+        });
     }
 
     // Send daily off list message to log room
@@ -222,7 +323,6 @@ export class TimeOff {
         }
 
         // Send log message
-
         if (!this.app.offLogRoom) {
             return;
         }

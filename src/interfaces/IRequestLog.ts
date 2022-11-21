@@ -77,6 +77,7 @@ export interface IScheduleData {
 }
 
 export interface IScheduleLog {
+    msg_id?: string;
     username: string;
     type: RequestType;
     period: TimePeriod;
