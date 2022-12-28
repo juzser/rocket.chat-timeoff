@@ -48,9 +48,9 @@ export async function ExtraOffCommand({ app, context, read, persis, modify, para
     // Create new record if not exists or update existed one
     const offExtraData = {
         id: user.id,
-        offExtra: 0,
-        wfhExtra: 0,
-        lateExtra: 0,
+        offExtra: userOffInfo?.offExtra || 0,
+        wfhExtra: userOffInfo?.wfhExtra || 0,
+        lateExtra: userOffInfo?.lateExtra || 0,
     };
 
     if (type === RequestType.OFF) {

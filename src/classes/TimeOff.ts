@@ -8,7 +8,7 @@ import { lang } from '../lang/index';
 import { confirmRequestModal } from '../modals/confirmRequestModal';
 import { createOffLog, getRemainingOff, getScheduleData, updateScheduleData, getOffLogsByMsgId, removeOffLogByMsgId } from '../lib/services';
 import { offlogBlock } from '../messages/offlogBlock';
-import { buildOffMessageData, checkIsPendingRequest, convertTimestampToDate, notifyUser, sendMessage, updateMessage } from '../lib/helpers';
+import { buildOffMessageData, checkIsPendingRequest, convertDateToTimestamp, convertTimestampToDate, notifyUser, sendMessage, updateMessage } from '../lib/helpers';
 import { AppConfig } from '../lib/config';
 import { dailylogBlock } from '../messages/dailylogBlock';
 
@@ -231,8 +231,6 @@ export class TimeOff {
             duration: msgOffLog.duration,
         });
 
-        this.app.getLogger().info(`isPending: ${isPending}`);
-
         if (!isPending) {
             throw lang.error.notPending;
         }
@@ -279,7 +277,9 @@ export class TimeOff {
 
         if (listSchedule) {
           const newScheduleList = [...listSchedule];
-          const dateScheduleIndex = newScheduleList.findIndex((e) => e.date === convertTimestampToDate(formData.startDate));
+          const dateScheduleIndex = newScheduleList.findIndex((e) => e.date === convertTimestampToDate(msgOffLog.startDate));
+
+          this.app.getLogger().info(`date schedule: ${convertTimestampToDate(msgOffLog.startDate)} -- ${dateScheduleIndex}`);
 
           if (dateScheduleIndex !== -1) {
             const newScheduleLogs = newScheduleList[dateScheduleIndex].logs.filter((e) => e.msg_id !== data.message?.id);
@@ -288,7 +288,7 @@ export class TimeOff {
             if (newScheduleLogs.length === 0) {
               newScheduleList.splice(dateScheduleIndex, 1);
             } else {
-              newScheduleList[dateScheduleIndex].logs = newScheduleLogs;
+              newScheduleList[dateScheduleIndex].logs = [...newScheduleLogs];
             }
 
             await updateScheduleData(newScheduleList, persis);
@@ -305,9 +305,10 @@ export class TimeOff {
     }
 
     // Send daily off list message to log room
-    public async scheduleLogDaily({ read, modify }: {
+    public async scheduleLogDaily({ read, modify, persis }: {
         read: IRead;
         modify: IModify;
+        persis: IPersistence;
     }) {
         const listSchedule = await getScheduleData(read);
 
@@ -327,6 +328,7 @@ export class TimeOff {
             return;
         }
 
+        // Send message
         const messageLogBlock = modify.getCreator().getBlockBuilder();
         await dailylogBlock({
             block: messageLogBlock,
@@ -334,13 +336,18 @@ export class TimeOff {
             logs: todayLog.logs,
         });
 
-        return await sendMessage({
+        await sendMessage({
             app: this.app,
             modify,
             room: this.app.offLogRoom,
             blocks: messageLogBlock,
             avatar: AppConfig.offLogIcon,
         });
+
+        // Remove log from schedule
+        const newListSchedule = listSchedule.filter((e) =>
+            convertDateToTimestamp(e.date) >= convertDateToTimestamp(today));
+        return await updateScheduleData(newListSchedule, persis);
     }
 
     private validateFormData(type: RequestType, formData: IFormData) {

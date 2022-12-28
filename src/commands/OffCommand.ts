@@ -9,7 +9,8 @@ import { StatsCommand } from './OffStats';
 import { LogsCommand } from './OffLogs';
 import { RequestCommand } from './Request';
 import { TickBoardCommand } from './TickBoard';
-import { MigrateCommand } from './MigrateData';
+// import { MigrateCommand } from './MigrateData';
+import { ExtraOffStatsCommand } from './ExtraOffStats';
 
 export class OffCommand implements ISlashCommand {
     public command = 'off';
@@ -21,6 +22,7 @@ export class OffCommand implements ISlashCommand {
         Help: 'help',
         Request: 'request',
         Extra: 'extra', // /off extra admin wfh -1
+        ExtraStats: 'extra-stats', // /off extra-stats
         Tick: 'tick', // /off tick 31/01/2022
         Stats: 'stats', // /off stats 2022
         Logs: 'logs', // /off logs username
@@ -38,6 +40,9 @@ export class OffCommand implements ISlashCommand {
                 break;
             case this.CommandEnum.Extra:
                 await ExtraOffCommand({ app: this.app, context, read, persis, modify, params });
+                break;
+            case this.CommandEnum.ExtraStats:
+                await ExtraOffStatsCommand({ app: this.app, context, read, persis, modify, params });
                 break;
             case this.CommandEnum.Tick:
                 await TickBoardCommand({ app: this.app, context, read, modify, params });

@@ -374,6 +374,8 @@ export class TimeOffApp extends App {
                 }
                 break;
         }
+
+        return;
     }
 
     public async extendConfiguration(configuration: IConfigurationExtend): Promise<void> {
@@ -394,7 +396,7 @@ export class TimeOffApp extends App {
             id: 'daily-off-log',
             processor: async (job, read, modify, http, persis) => {
                 this.getLogger().info('Daily off log process started');
-                await this.timeoff.scheduleLogDaily({ read, modify });
+                await this.timeoff.scheduleLogDaily({ read, modify, persis });
             },
         }]);
     }

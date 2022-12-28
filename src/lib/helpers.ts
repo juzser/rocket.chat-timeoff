@@ -281,6 +281,10 @@ function getTotal(perMonth: number, year: number, userCreatedDate: Date): number
 
     const userCreatedMonth = userCreatedDate.getMonth();
     const userCreatedYear = userCreatedDate.getFullYear();
+    const userCreatedDay = userCreatedDate.getDate();
+
+    // Minus 1 day if user created date is after 15th of the month
+    const deltaDay = userCreatedDay < 15 ? 0 : 1;
 
     // If it's past year
     // Ex: user created date 07/2019
@@ -293,7 +297,7 @@ function getTotal(perMonth: number, year: number, userCreatedDate: Date): number
         }
 
         return year === userCreatedYear
-            ? perMonth * (11 - userCreatedMonth + 1)
+            ? perMonth * (11 - userCreatedMonth + 1) - deltaDay
             : perMonth * 12;
     }
 
@@ -304,7 +308,7 @@ function getTotal(perMonth: number, year: number, userCreatedDate: Date): number
 
     // If it's current year
     if (year === userCreatedYear) {
-        return perMonth * (currentMonth - userCreatedMonth + 1);
+        return perMonth * (currentMonth - userCreatedMonth + 1) - deltaDay;
     }
 
     return perMonth * (currentMonth + 1);

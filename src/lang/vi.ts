@@ -194,4 +194,14 @@ export const vi = {
         heading: 'Lịch sử xin phép',
         caption: (user: string, off: number, wfh: number) => `*${user}* còn :beach: *${off}* ngày nghỉ phép và :house_with_garden: *${wfh}* ngày WFH trong năm.`,
     },
+
+    extraLogs: {
+        heading: 'Thống kê thêm',
+        userLine: ({ username, off, wfh, late }: {
+            username: string,
+            off?: number,
+            wfh?: number,
+            late?: number,
+        }) => `*${username}:* *${off}* ngày nghỉ | *${wfh}* ngày WFH | *${late}* phút muộn`,
+    },
 };

@@ -1,27 +1,23 @@
 import { IModify, IRead } from '@rocket.chat/apps-engine/definition/accessors';
 import { IUIKitModalViewParam } from '@rocket.chat/apps-engine/definition/uikit/UIKitInteractionResponder';
-import { IMemberOffRemain } from '../interfaces/IRequestLog';
 
 import { lang } from '../lang/index';
 
-export async function statsBoardModal({ modify, stats, year }: {
+export async function extraOffBoardModal({ modify, stats }: {
     modify: IModify;
     stats: {
         username: string;
-        remainingOff: IMemberOffRemain;
+        offExtra?: number;
+        wfhExtra?: number;
+        lateExtra?: number;
     }[];
-    year?: number;
 }): Promise<IUIKitModalViewParam> {
     const block = modify.getCreator().getBlockBuilder();
-
-    block.addSectionBlock({
-        text: block.newMarkdownTextObject(lang.statsBoard.caption(year)),
-    });
 
     let messageContent = '';
 
     stats.map((stat, index) => {
-        messageContent += `${index ? '\n': ''}${index + 1}. ${lang.statsBoard.userLine({ username: stat.username, off: stat.remainingOff.off, wfh: stat.remainingOff.wfh, late: stat.remainingOff.late })}`;
+        messageContent += `${index ? '\n': ''}${index + 1}. ${lang.extraLogs.userLine({ username: stat.username, off: stat.offExtra, wfh: stat.wfhExtra, late: stat.lateExtra })}`;
     });
 
     block.addSectionBlock({
@@ -29,8 +25,8 @@ export async function statsBoardModal({ modify, stats, year }: {
     });
 
     return {
-        id: 'modalStatsBoard',
-        title: block.newPlainTextObject(lang.statsBoard.heading),
+        id: 'modalExtraOffBoard',
+        title: block.newPlainTextObject(lang.extraLogs.heading),
         close: block.newButtonElement({
             text: block.newPlainTextObject(lang.common.cancel),
         }),
