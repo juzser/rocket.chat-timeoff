@@ -261,6 +261,7 @@ export class TimeOffApp extends App {
 
         const actualLogTime = (this.scheduleLogTime - AppConfig.timezoneOffset) || 2; // 2:00 AM
 
+        this.getLogger().info('settingup schedule job');
         await configModify.scheduler.cancelJob('daily-off-log');
         await configModify.scheduler.scheduleRecurring({
             id: 'daily-off-log',
@@ -365,6 +366,8 @@ export class TimeOffApp extends App {
 
                     // Rerun the schedule task
                     const actualLogTime = (this.scheduleLogTime - AppConfig.timezoneOffset) || 2; // 2:00 AM
+
+                    this.getLogger().info('settingup schedule job - new settings');
                     await configModify.scheduler.cancelJob('daily-off-log');
                     await configModify.scheduler.scheduleRecurring({
                         id: 'daily-off-log',

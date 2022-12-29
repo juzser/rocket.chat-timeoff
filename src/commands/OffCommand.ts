@@ -11,6 +11,7 @@ import { RequestCommand } from './Request';
 import { TickBoardCommand } from './TickBoard';
 // import { MigrateCommand } from './MigrateData';
 import { ExtraOffStatsCommand } from './ExtraOffStats';
+import { TestCommand } from './Test';
 
 export class OffCommand implements ISlashCommand {
     public command = 'off';
@@ -27,6 +28,7 @@ export class OffCommand implements ISlashCommand {
         Stats: 'stats', // /off stats 2022
         Logs: 'logs', // /off logs username
         // Migrate: 'migrate', // /off migrate
+        Test: 'test',
     };
 
     constructor(private readonly app: AppClass) {}
@@ -52,6 +54,9 @@ export class OffCommand implements ISlashCommand {
                 break;
             case this.CommandEnum.Logs:
                 await LogsCommand({ app: this.app, context, read, persis, modify, params });
+                break;
+            case this.CommandEnum.Test:
+                await TestCommand({ app: this.app, context, read, persis, modify, params });
                 break;
             // case this.CommandEnum.Migrate:
             //     await MigrateCommand({ app: this.app, context, read, persis, modify, params });

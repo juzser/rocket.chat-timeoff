@@ -311,6 +311,7 @@ export class TimeOff {
         persis: IPersistence;
     }) {
         const listSchedule = await getScheduleData(read);
+        this.app.getLogger().info(listSchedule);
 
         if (!listSchedule) {
             return;
@@ -345,8 +346,10 @@ export class TimeOff {
         });
 
         // Remove log from schedule
+        const startOfToday = new Date().setHours(0, 0, 0, 0);
+
         const newListSchedule = listSchedule.filter((e) =>
-            convertDateToTimestamp(e.date) >= convertDateToTimestamp(today));
+            convertDateToTimestamp(e.date) >= startOfToday);
         return await updateScheduleData(newListSchedule, persis);
     }
 
