@@ -1,7 +1,7 @@
 {
     "id": "4090a62a-bcf7-411f-86a2-861085176566",
     "version": "1.0.0",
-    "requiredApiVersion": "1.32.0",
+    "requiredApiVersion": "^1.36.0",
     "iconFile": "icon.png",
     "author": {
         "name": "juzser",

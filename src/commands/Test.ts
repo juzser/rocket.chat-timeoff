@@ -6,6 +6,8 @@ import { IScheduleLog, RequestType, TimePeriod } from '../interfaces/IRequestLog
 import { buildOffMessageData, convertDateToTimestamp, convertTimestampToDate, notifyUser } from '../lib/helpers';
 import { getOffLogs, getOffLogsByUserId, getScheduleData, updateScheduleData } from '../lib/services';
 import { memberLogsModal } from '../modals/memberLogsModal';
+import { RocketChatAssociationModel, RocketChatAssociationRecord } from '@rocket.chat/apps-engine/definition/metadata';
+import { IMemberStatus } from '../interfaces/ITimeLog';
 
 // Open modal to request time off
 export async function TestCommand({ app, context, read, persis, modify, params }: {
@@ -16,10 +18,25 @@ export async function TestCommand({ app, context, read, persis, modify, params }
     modify: IModify
     params: string[];
 }): Promise<void> {
-   // Create schedule job to notice in log room
-   const listSchedule = await getScheduleData(read);
+    // Create schedule job to notice in log room
+    // const listSchedule = await getScheduleData(read);
 
-   app.getLogger().info(listSchedule);
+    // const pattern = params.join(' ');
+
+    // app.getLogger().info(listSchedule);
+
+    // modify.getScheduler().scheduleRecurring({
+    //     id: 'daily-off-log',
+    //     // interval: `56 ${app.scheduleLogTime - 7} * * 1-5`,
+    //     interval: pattern,
+    //     skipImmediate: true,
+    // });
+
+    // app.getLogger().info(modify.getScheduler());
+
+
+   // Trigger Log Daily message
+//    await app.timeoff.scheduleLogDaily({ read, modify, persis });
 
 //    const offLogs = await getOffLogs(read);
 

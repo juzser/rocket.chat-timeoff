@@ -8,11 +8,12 @@ import { IMemberState, IMemberTime, WfhStatus } from '../interfaces/ITimeLog';
 import { lang } from '../lang/index';
 import { AppConfig } from '../lib/config';
 import { notifyUser, sendMessage, updateMessage } from '../lib/helpers';
-import { createTimeLog, getTimeLogById, updateTimelogById } from '../lib/services';
+import { updateTimeLog, getCurrentTimeLog, getTimeLogStatusByMember, getTimeLogByDateRoom, updateMemberTimeLog, updateSelfTimelog, getTimeLogByMessage } from '../lib/services';
 import { getTimeLogId } from '../lib/helpers';
 import { timelogBlock } from '../messages/timelogBlock';
 
-export async function CheckinCommand(app: TimeOffApp, context: SlashCommandContext, read: IRead, modify: IModify, persis: IPersistence, params?: Array<string>): Promise<void> {
+
+export async function CheckinStartCommand(app: TimeOffApp, context: SlashCommandContext, read: IRead, modify: IModify, persis: IPersistence, params?: Array<string>): Promise<void> {
     const [ ...msgParams ] = params || [];
 
     const message = msgParams.join(' ');
@@ -26,20 +27,21 @@ export async function CheckinCommand(app: TimeOffApp, context: SlashCommandConte
     const user = context.getSender();
     const senderTime = currentTime + ((user.utcOffset - AppConfig.defaultTimezone) * 60 * 60 * 1000);
 
-    // Get timelog from cache or DB
-    const timelogId = getTimeLogId(currentTime, room.slugifiedName);
-    let timelog = app.timelogCache && app.timelogCache.isValid()
-        ? app.timelogCache.getTimeLogById(timelogId)
-        : null;
+    // Current member status
+    const currentMemberStatus = await getTimeLogStatusByMember(user.id, read);
 
-    if (!timelog) {
-        timelog = await getTimeLogById(timelogId, read);
+    // Already started
+    if (currentMemberStatus?.status === WfhStatus.START
+        || currentMemberStatus?.status === WfhStatus.RESUME
+    ) {
+        return await notifyUser({ app, message: lang.error.alreadyStart, user, room, modify });
     }
 
     // New member check-in
     const member: IMemberTime = {
         id: user.id,
         username: user.username,
+        offset: user.utcOffset,
         states: [],
     };
 
@@ -49,61 +51,28 @@ export async function CheckinCommand(app: TimeOffApp, context: SlashCommandConte
         message,
     };
 
-    // Check if the message is still existed
-    const validTimelog = timelog && await read.getMessageReader().getById(timelog.msgId)
-        ? true
-        : false;
+    member.states.push(newState);
 
-    // Timelog found -> Update timelog
-    if (validTimelog && timelog) {
-        // Find existed member
-        const memberIndex = timelog.memberActive.findIndex((u) => u.id === user.id);
+    // get time log
+    const timelogId = getTimeLogId(senderTime, room.slugifiedName);
+    // Get timelog from cache
+    let timelog = app.timelogCache && app.timelogCache.isValid()
+        ? app.timelogCache.getTimeLogById(timelogId)
+        : null;
 
-        // Already in the list
-        if (memberIndex > -1) {
-            const tmpUserState = timelog.memberActive[memberIndex].states;
-            const lastState = tmpUserState[tmpUserState.length - 1];
+    // Get current timelog from DB
+    if (!timelog) {
+        timelog = await getTimeLogByDateRoom(senderTime, room.slugifiedName, read);
+    }
 
-            // Error: Already started
-            if (lastState.status === WfhStatus.START || lastState.status === WfhStatus.RESUME) {
-                return await notifyUser({ app, message: lang.error.alreadyStart, user, room, modify });
-            }
-
-            // Success: Add new state
-            newState.status = WfhStatus.RESUME; // Have status before
-            timelog.memberActive[memberIndex].states.push(newState);
-        } else {
-            // Add new member check-in to existed timelog
-            member.states.push(newState);
-            timelog.memberActive.push(member);
-        }
-
-        // Update message block
-        const block = modify.getCreator().getBlockBuilder();
-        await timelogBlock({ block, memberData: timelog.memberActive });
-
-        await updateMessage({
-            app,
-            modify,
-            messageId: timelog.msgId,
-            blocks: block,
-        });
-
-        // Cache new timelog
-        app.timelogCache = new TimeLogCache(timelog);
-
-        // Update existed timelog
-        await updateTimelogById(timelogId, timelog, persis);
-    } else {
-        /**
-         * No timelog for today -> OK current member is the first one
-         */
-        member.states.push(newState);
-
+    // Still not found -> Create new timelog for today
+    // This member is first one
+    if (!timelog) {
         // Create message block
         const block = modify.getCreator().getBlockBuilder();
         await timelogBlock({ block, memberData: [member] });
 
+        // Send to channel
         const logMessageId = await sendMessage({
             app,
             modify,
@@ -123,22 +92,50 @@ export async function CheckinCommand(app: TimeOffApp, context: SlashCommandConte
             memberActive: [member],
         };
 
+        // Update user status
+        await updateMemberTimeLog(user.id, WfhStatus.START, logMessageId, persis);
+
+        // Create record timelog
+        await updateTimeLog(senderTime, room.slugifiedName, logMessageId, newTimelog, persis);
+
         // Cache new timelog
         app.timelogCache = new TimeLogCache(newTimelog);
 
-        // Create record
-        if (timelog) {
-            await updateTimelogById(timelogId, newTimelog, persis);
-        } else {
-            await createTimeLog(timelogId, newTimelog, persis);
-        }
+        // Temporary notify to user
+        await notifyUser({ app, message: lang.checkin.startNotify, user, room, modify });
+
+        return;
     }
 
-    // Temporary notify to user
-    await notifyUser({ app, message: lang.checkin.startNotify, user, room, modify });
+    /**
+     * Already existed timelog
+     */
+    // Check member existed
+    const memberIndex = timelog.memberActive.findIndex((u) => u.id === user.id);
+
+    // Non existed member
+    if (memberIndex === -1) {
+        // Update this member to list
+        timelog.memberActive.push(member);
+
+        // Update user status
+        await updateMemberTimeLog(user.id, WfhStatus.START, timelog.msgId, persis);
+
+        // Update existed timelog
+        await updateSelfTimelog(timelog, persis);
+
+        // Cache new timelog
+        app.timelogCache = new TimeLogCache(timelog);
+
+        // Update message block
+        await updateTimelogMessage(app, timelog, modify);
+
+        // Temporary notify to user
+        await notifyUser({ app, message: lang.checkin.startNotify, user, room, modify });
+    }
 }
 
-export async function CheckoutCommand(type: 'pause' | 'end', app: TimeOffApp, context: SlashCommandContext, read: IRead, modify: IModify, persis: IPersistence, params?: Array<string>): Promise<void> {
+export async function CheckinResumeCommand(app: TimeOffApp, context: SlashCommandContext, read: IRead, modify: IModify, persis: IPersistence, params?: Array<string>): Promise<void> {
     const [ ...msgParams ] = params || [];
 
     const message = msgParams.join(' ');
@@ -152,53 +149,151 @@ export async function CheckoutCommand(type: 'pause' | 'end', app: TimeOffApp, co
     const user = context.getSender();
     const senderTime = currentTime + ((user.utcOffset - AppConfig.defaultTimezone) * 60 * 60 * 1000);
 
-    // Get timelog from cache or DB
-    const timelogId = getTimeLogId(currentTime, room.slugifiedName);
-    let timelog = app.timelogCache && app.timelogCache.isValid()
-        ? app.timelogCache.getTimeLogById(timelogId)
-        : null;
+    // Current member status
+    const currentMemberStatus = await getTimeLogStatusByMember(user.id, read);
 
-    if(!timelog) {
-        timelog = await getTimeLogById(timelogId, read);
+    // get time log
+    if (!currentMemberStatus) {
+        return await notifyUser({ app, message: lang.error.somethingWrong, user, room, modify });
+    }
+
+    // Already started
+    if (currentMemberStatus.status === WfhStatus.START
+        || currentMemberStatus.status === WfhStatus.RESUME
+    ) {
+        return await notifyUser({ app, message: lang.error.alreadyStart, user, room, modify });
     }
 
     const newState: IMemberState = {
-        status: type === 'pause' ? WfhStatus.PAUSE : WfhStatus.END,
+        status: WfhStatus.RESUME,
         timestamp: senderTime,
         message,
     };
 
     // Check if the message is still existed
-    const validTimelog = timelog && await read.getMessageReader().getById(timelog.msgId)
+    const validTimelog = await read.getMessageReader().getById(currentMemberStatus.message)
         ? true
         : false;
 
-    // No message
-    if (!validTimelog || !timelog) {
+    if (!validTimelog) {
+        return await notifyUser({ app, message: lang.error.noTimelog, user, room, modify });
+    }
+
+    const timelog = await getTimeLogByMessage(currentMemberStatus.message, read);
+
+    if (!timelog) {
         return await notifyUser({ app, message: lang.error.noTimelog, user, room, modify });
     }
 
     // Find existed member
     const memberIndex = timelog.memberActive.findIndex((u) => u.id === user.id);
 
-    // No user
-    if (memberIndex < 0) {
-        return await notifyUser({ app, message: lang.error.alreadyEnd, user, room, modify });
-    }
-
-    // Already in the list
-    const tmpUserState = timelog.memberActive[memberIndex].states;
-    const lastState = tmpUserState[tmpUserState.length - 1];
-
-    // Error: Already started
-    if (lastState.status !== WfhStatus.START && lastState.status !== WfhStatus.RESUME) {
-        return await notifyUser({ app, message: lang.error.alreadyEnd, user, room, modify });
+    if (memberIndex === -1) {
+        return await notifyUser({ app, message: lang.error.noTimelog, user, room, modify });
     }
 
     // Success: Add new state
     timelog.memberActive[memberIndex].states.push(newState);
 
+    // Update user status
+    await updateMemberTimeLog(user.id, WfhStatus.RESUME, timelog.msgId, persis);
+
+    // Update existed timelog
+    await updateSelfTimelog(timelog, persis);
+
+    // Cache new timelog
+    app.timelogCache = new TimeLogCache(timelog);
+
     // Update message block
+    await updateTimelogMessage(app, timelog, modify);
+
+    // Temporary notify to user
+    await notifyUser({ app, message: lang.checkin.startNotify, user, room, modify });
+}
+
+export async function CheckoutCommand(type: 'pause' | 'end', app: TimeOffApp, context: SlashCommandContext, read: IRead, modify: IModify, persis: IPersistence, params?: Array<string>): Promise<void> {
+  const [ ...msgParams ] = params || [];
+
+  const message = msgParams.join(' ');
+  const room = context.getRoom();
+
+  // Get member time
+  const currentDate = new Date();
+  const currentTime = currentDate.getTime();
+
+  // Search user
+  const user = context.getSender();
+  const senderTime = currentTime + ((user.utcOffset - AppConfig.defaultTimezone) * 60 * 60 * 1000);
+
+  // Current member status
+  const currentMemberStatus = await getTimeLogStatusByMember(user.id, read);
+
+  // get time log
+  if (!currentMemberStatus) {
+      return await notifyUser({ app, message: lang.error.somethingWrong, user, room, modify });
+  }
+
+  // Already ended
+  if (currentMemberStatus.status === WfhStatus.END
+    || currentMemberStatus.status === WfhStatus.PAUSE
+  ) {
+    return await notifyUser({ app, message: lang.error.alreadyEnd, user, room, modify });
+  }
+
+  const newState: IMemberState = {
+    status: type === 'pause' ? WfhStatus.PAUSE : WfhStatus.END,
+    timestamp: senderTime,
+    message,
+  };
+
+  // Check if the message is still existed
+  const validTimelog = await read.getMessageReader().getById(currentMemberStatus.message)
+      ? true
+      : false;
+
+  if (!validTimelog) {
+    return await notifyUser({ app, message: lang.error.noTimelog, user, room, modify });
+  }
+
+  const timelog = await getTimeLogByMessage(currentMemberStatus.message, read);
+
+  if (!timelog) {
+      return await notifyUser({ app, message: lang.error.noTimelog, user, room, modify });
+  }
+
+  // Find existed member
+  const memberIndex = timelog.memberActive.findIndex((u) => u.id === user.id);
+
+  // No user
+  if (memberIndex < 0) {
+      return await notifyUser({ app, message: lang.error.alreadyEnd, user, room, modify });
+  }
+
+  // Success: Add new state
+  timelog.memberActive[memberIndex].states.push(newState);
+
+  // Update user status
+  await updateMemberTimeLog(
+    user.id,
+    type === 'pause' ? WfhStatus.PAUSE : WfhStatus.END,
+    timelog.msgId,
+    persis,
+  );
+
+  // Update existed timelog
+  await updateSelfTimelog(timelog, persis);
+
+  // Cache new timelog
+  app.timelogCache = new TimeLogCache(timelog);
+
+  // Update message block
+  await updateTimelogMessage(app, timelog, modify);
+
+  // Temporary notify to user
+  await notifyUser({ app, message: lang.checkin.endNotify, user, room, modify });
+}
+
+async function updateTimelogMessage(app: TimeOffApp, timelog: ITimeLog, modify: IModify): Promise<void> {
     const block = modify.getCreator().getBlockBuilder();
     await timelogBlock({ block, memberData: timelog.memberActive });
 
@@ -208,13 +303,4 @@ export async function CheckoutCommand(type: 'pause' | 'end', app: TimeOffApp, co
         messageId: timelog.msgId,
         blocks: block,
     });
-
-    // Cache new timelog
-    app.timelogCache = new TimeLogCache(timelog);
-
-    // Update existed timelog
-    await updateTimelogById(timelogId, timelog, persis);
-
-    // Temporary notify to user
-    await notifyUser({ app, message: lang.checkin.endNotify, user, room, modify });
 }

@@ -139,10 +139,10 @@ export const vi = {
         },
         warningOverTotal: (type: string) => `:warning: *Số ngày ${type === 'off' ? 'nghỉ phép' : 'phép WFH'} không đủ*. Bạn có thể làm ảnh hưởng tới công việc của cả team, cũng như các đánh giá về performance cá nhân, hoặc hơn nữa là bị trừ lương.
 
-        :x: Đồng thời bạn phải tích một tích đỏ trên bảng. (Quá số ngày phép)`,
-        warningLateRequest: ':heavy_multiplication_x: Bạn xin phép muộn nên phải tích 1 tích đen trên bảng.',
-        warningLateTick: ':heavy_multiplication_x: Xin đi muộn hoặc về sớm vẫn phải tích một tích đen trên bảng.',
-        warningLateLimitedTick: ':heavy_multiplication_x: Bạn đã dùng hết quỹ thời gian [đi muộn/về sớm] của tháng này. Bạn phải tích một tích trên bảng.',
+        :x: Đồng thời bạn nhận tích một tích đỏ. (Quá số ngày phép)`,
+        warningLateRequest: ':heavy_multiplication_x: Bạn xin phép muộn nên chịu 1 tích đen.',
+        warningLateTick: ':heavy_multiplication_x: Xin đi muộn hoặc về sớm chịu một tích đen.',
+        warningLateLimitedTick: ':heavy_multiplication_x: Bạn đã dùng hết quỹ thời gian [đi muộn/về sớm] của tháng này. Bạn phải chịu một tích đen.',
     },
 
     offLogMessage: {
@@ -154,7 +154,7 @@ export const vi = {
         },
         reason: '*Lý do:*',
         warningOverTotal: (total?: number) => `Quá số ngày phép${total ? ` (*${total}* ngày phép)` : ''}.`,
-        warningLateTick: 'Đi muộn/Về sớm phải tích một tích trên bảng.',
+        warningLateTick: 'Đi muộn/Về sớm phải nhận một tích đen.',
         warningLateRequest: 'Xin phép muộn.',
         requestCancelled: (author: string) => `:speech_balloon: *${author}* đã hủy yêu cầu.`,
         cancelledSuccessful: 'Hủy yêu cầu thành công.',

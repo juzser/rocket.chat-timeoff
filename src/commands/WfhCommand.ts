@@ -5,7 +5,7 @@ import { TimeOffApp as AppClass } from '../../TimeOffApp';
 
 import { lang } from '../lang/index';
 import { notifyUser } from '../lib/helpers';
-import { CheckinCommand, CheckoutCommand } from './Checkin';
+import { CheckinResumeCommand, CheckinStartCommand, CheckoutCommand } from './Checkin';
 import { HelpCommand } from './Help';
 
 export class WfhCommand implements ISlashCommand {
@@ -44,8 +44,10 @@ export class WfhCommand implements ISlashCommand {
                 await HelpCommand(this.app, context, read, modify);
                 break;
             case this.CommandEnum.Start:
+                await CheckinStartCommand(this.app, context, read, modify, persis, params);
+                break;
             case this.CommandEnum.Resume:
-                await CheckinCommand(this.app, context, read, modify, persis, params);
+                await CheckinResumeCommand(this.app, context, read, modify, persis, params);
                 break;
             case this.CommandEnum.Pause:
                 await CheckoutCommand('pause', this.app, context, read, modify, persis, params);

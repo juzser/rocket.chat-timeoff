@@ -15,6 +15,7 @@ export interface ITimeLog {
 export interface IMemberTime {
     id: string; // user id
     username: string;
+    offset: number; // timezone offset (+7)
     states: Array<IMemberState>;
 }
 
@@ -22,4 +23,9 @@ export interface IMemberState {
     status: WfhStatus;
     timestamp: number;
     message: string;
+}
+
+export interface IMemberStatus {
+    status: WfhStatus;
+    message: string; // message id
 }

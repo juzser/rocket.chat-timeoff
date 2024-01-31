@@ -31,7 +31,7 @@ export async function tickBoardModal({ app, read, modify, inputDate, messageData
             messageContent += `${index ? '\n': ''}${lang.tickBoard.userLine({ username: user.username, off, wfh, late })} `;
 
             warning.forEach((w) => {
-                messageContent += `${w.tick === 'red' ? ':x:' : ':heavy_multiplication_x:'}`;
+                messageContent += `${w.tick === 'red' ? ' :x: ' : ' :heavy_multiplication_x: '}`;
             })
         }
     }));

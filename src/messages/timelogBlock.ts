@@ -54,7 +54,11 @@ export async function timelogBlock({ block, memberData }: {
             logContent += ']';
         });
 
-        memberLogContent += `${statusContent} *${member.username}* -- ${lang.message.totalTime(totalTime)}\n${logContent}\n\n`;
+        const offset = member.offset !== 7
+            ? member.offset > 0 ? ` (UTC+${member.offset})` : ` (UTC${member.offset})`
+            : '';
+
+        memberLogContent += `${statusContent} *${member.username}*${offset} -- ${lang.message.totalTime(totalTime)}\n${logContent}\n\n`;
     });
 
 

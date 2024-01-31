@@ -3,8 +3,9 @@ import { RocketChatAssociationModel, RocketChatAssociationRecord } from '@rocket
 import { IRoom } from '@rocket.chat/apps-engine/definition/rooms';
 import { convertTimestampToDate, getTimeLogId, getTotalDayOff, getTotalDayWfh } from './helpers';
 
-import { ITimeLog } from '../interfaces/ITimeLog';
+import { IMemberStatus, ITimeLog, WfhStatus } from '../interfaces/ITimeLog';
 import { IMemberExtra, IMemberOffRemain, IOffLog, IScheduleData, RequestType } from '../interfaces/IRequestLog';
+import { IUser } from '@rocket.chat/apps-engine/definition/users';
 
 const TIME_LOG_KEY = 'timeoff-log';
 const OFF_LOG_KEY = 'timeoff-log';
@@ -17,37 +18,100 @@ const OFF_SCHEDULE_KEY = 'timeoff-schedule';
  * @param data
  * @param persis
  */
-export async function createTimeLog(id: string, data: ITimeLog, persis: IPersistence): Promise<string> {
-    // Save to store
-    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${TIME_LOG_KEY}_${id}`);
-    return persis.createWithAssociation(data, association);
+export async function updateTimeLog(time: number, roomName: string, messageId: string, data: ITimeLog, persis: IPersistence): Promise<boolean> {
+    const day = new Date(time).getDate();
+    const month = new Date(time).getMonth();
+    const year = new Date(time).getFullYear();
+
+    const associations: RocketChatAssociationRecord[] = [
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, TIME_LOG_KEY),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `year-${year.toString()}`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `month-${month.toString()}`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `day-${day.toString()}`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MESSAGE, messageId),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.ROOM, roomName),
+    ];
+
+    try {
+        await persis.updateByAssociations(associations, data, true);
+    } catch (err) {
+        console.warn(err);
+        return false;
+    }
+
+    return true;
 }
 
 /**
- * Update time log by id in association
+ * Update time log by timelog in association
  *
  * @param newData
  * @param persis
  */
-export async function updateTimelogById(id: string, newData: ITimeLog, persis: IPersistence): Promise<string> {
-    // Save to store
-    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${TIME_LOG_KEY}_${id}`);
-    return persis.updateByAssociation(association, newData);
+export async function updateSelfTimelog(timelog: ITimeLog, persis: IPersistence): Promise<boolean> {
+    const { msgId, room, id } = timelog;
+
+    // get day month year from id `room_ddmmyyyy`
+    const dateFormat = id.split('_')[1];
+    const day = +dateFormat.slice(0, 2);
+    const month = +dateFormat.slice(2, 4);
+    const year = +dateFormat.slice(4, 8);
+
+    const associations = [
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, TIME_LOG_KEY),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `year-${year.toString()}`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `month-${month.toString()}`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `day-${day.toString()}`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MESSAGE, msgId),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.ROOM, room),
+    ];
+    try {
+        await persis.updateByAssociations(associations, timelog, false);
+    } catch (err) {
+        console.warn(err);
+        return false;
+    }
+
+    return true;
 }
 
 /**
- * Get time log data by ID from association
+ * Get time log data by message
  *
  * @param id
  * @param read
  */
-export async function getTimeLogById(id: string, read: IRead): Promise<ITimeLog | null> {
-    const association = new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${TIME_LOG_KEY}_${id}`);
-    const data = await read.getPersistenceReader().readByAssociation(association);
+export async function getTimeLogByMessage(message: string, read: IRead): Promise<ITimeLog | null> {
+    const associations = [
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, TIME_LOG_KEY),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MESSAGE, message),
+    ];
 
-    if (!data.length) {
-        return null;
-    }
+    const data = await read.getPersistenceReader().readByAssociations(associations);
+
+    return data[0] as ITimeLog;
+}
+
+/**
+ * Get time log data by date, and room from association
+ *
+ * @param id
+ * @param read
+ */
+export async function getTimeLogByDateRoom(time: number, roomName: string, read: IRead): Promise<ITimeLog | null> {
+    const day = new Date(time).getDate();
+    const month = new Date(time).getMonth();
+    const year = new Date(time).getFullYear();
+
+    const associations = [
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, TIME_LOG_KEY),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `year-${year.toString()}`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `month-${month.toString()}`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `day-${day.toString()}`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.ROOM, roomName),
+    ];
+
+    const data = await read.getPersistenceReader().readByAssociations(associations);
 
     return data[0] as ITimeLog;
 }
@@ -59,9 +123,47 @@ export async function getTimeLogById(id: string, read: IRead): Promise<ITimeLog 
  */
 export async function getCurrentTimeLog(room: IRoom, read: IRead): Promise<ITimeLog | null> {
     const currentDate = new Date();
-    const id = getTimeLogId(currentDate.getTime(), room.slugifiedName);
 
-    return getTimeLogById(id, read);
+    return getTimeLogByDateRoom(currentDate.getTime(), room.slugifiedName, read);
+}
+
+/**
+ * Create a member time log status
+ *
+ * @param data
+ * @param persis
+ */
+export async function updateMemberTimeLog(userId: string, status: WfhStatus, message: string, persis: IPersistence): Promise<boolean> {
+    const associations: RocketChatAssociationRecord[] = [
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${TIME_LOG_KEY}-user`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.USER, userId),
+    ];
+
+    try {
+        await persis.updateByAssociations(associations, { status, message }, true);
+    } catch (err) {
+        console.warn(err);
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Get time log data by date, and room from association
+ *
+ * @param id
+ * @param read
+ */
+export async function getTimeLogStatusByMember(id: string, read: IRead): Promise<IMemberStatus | null> {
+    const associations = [
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `${TIME_LOG_KEY}-user`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.USER, id),
+    ];
+
+    const data = await read.getPersistenceReader().readByAssociations(associations);
+
+    return data[0] as IMemberStatus;
 }
 
 /**
