@@ -55,15 +55,9 @@ export async function CheckinStartCommand(app: TimeOffApp, context: SlashCommand
 
     // get time log
     const timelogId = getTimeLogId(senderTime, room.slugifiedName);
-    // Get timelog from cache
-    let timelog = app.timelogCache && app.timelogCache.isValid()
-        ? app.timelogCache.getTimeLogById(timelogId)
-        : null;
 
     // Get current timelog from DB
-    if (!timelog) {
-        timelog = await getTimeLogByDateRoom(senderTime, room.slugifiedName, read);
-    }
+    const timelog = await getTimeLogByDateRoom(senderTime, room.slugifiedName, read);
 
     // Still not found -> Create new timelog for today
     // This member is first one
@@ -98,9 +92,6 @@ export async function CheckinStartCommand(app: TimeOffApp, context: SlashCommand
         // Create record timelog
         await updateTimeLog(senderTime, room.slugifiedName, logMessageId, newTimelog, persis);
 
-        // Cache new timelog
-        app.timelogCache = new TimeLogCache(newTimelog);
-
         // Temporary notify to user
         await notifyUser({ app, message: lang.checkin.startNotify, user, room, modify });
 
@@ -124,15 +115,29 @@ export async function CheckinStartCommand(app: TimeOffApp, context: SlashCommand
         // Update existed timelog
         await updateSelfTimelog(timelog, persis);
 
-        // Cache new timelog
-        app.timelogCache = new TimeLogCache(timelog);
-
         // Update message block
         await updateTimelogMessage(app, timelog, modify);
 
         // Temporary notify to user
         await notifyUser({ app, message: lang.checkin.startNotify, user, room, modify });
+
+        return;
     }
+
+    // Existed member -> Update status
+    timelog.memberActive[memberIndex].states.push(newState);
+
+    // Update user status
+    await updateMemberTimeLog(user.id, WfhStatus.START, timelog.msgId, persis);
+
+    // Update existed timelog
+    await updateSelfTimelog(timelog, persis);
+
+    // Update message block
+    await updateTimelogMessage(app, timelog, modify);
+
+    // Temporary notify to user
+    await notifyUser({ app, message: lang.checkin.startNotify, user, room, modify });
 }
 
 export async function CheckinResumeCommand(app: TimeOffApp, context: SlashCommandContext, read: IRead, modify: IModify, persis: IPersistence, params?: Array<string>): Promise<void> {
@@ -200,9 +205,6 @@ export async function CheckinResumeCommand(app: TimeOffApp, context: SlashComman
 
     // Update existed timelog
     await updateSelfTimelog(timelog, persis);
-
-    // Cache new timelog
-    app.timelogCache = new TimeLogCache(timelog);
 
     // Update message block
     await updateTimelogMessage(app, timelog, modify);
@@ -282,9 +284,6 @@ export async function CheckoutCommand(type: 'pause' | 'end', app: TimeOffApp, co
 
   // Update existed timelog
   await updateSelfTimelog(timelog, persis);
-
-  // Cache new timelog
-  app.timelogCache = new TimeLogCache(timelog);
 
   // Update message block
   await updateTimelogMessage(app, timelog, modify);
