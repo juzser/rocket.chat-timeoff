@@ -117,6 +117,27 @@ export async function getTimeLogByDateRoom(time: number, roomName: string, read:
 }
 
 /**
+ * Get time log data by month & year & room from association
+ *
+ * @param month
+ * @param year
+ * @param room
+ * @param read
+ */
+export async function getTimeLogByMonth(month: number, year: number, room: IRoom, read: IRead): Promise<ITimeLog[]> {
+    const associations = [
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, TIME_LOG_KEY),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `year-${year.toString()}`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `month-${month.toString()}`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.ROOM, room.slugifiedName),
+    ];
+
+    const data = await read.getPersistenceReader().readByAssociations(associations);
+
+    return data as ITimeLog[];
+}
+
+/**
  * Get current date time log data from association
  *
  * @param read
@@ -172,10 +193,12 @@ export async function getTimeLogStatusByMember(id: string, read: IRead): Promise
 export async function createOffLog(persis: IPersistence, data: IOffLog): Promise<boolean> {
     // Save to store
     const year = new Date(data.startDate).getFullYear();
+    const month = new Date(data.startDate).getMonth();
 
     const associations: RocketChatAssociationRecord[] = [
         new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_LOG_KEY),
         new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `off-year-${year}`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `off-month-${month}`),
         new RocketChatAssociationRecord(RocketChatAssociationModel.MESSAGE, data.msg_id),
         new RocketChatAssociationRecord(RocketChatAssociationModel.USER, data.user_id),
     ];
@@ -197,10 +220,12 @@ export async function createOffLog(persis: IPersistence, data: IOffLog): Promise
  */
 export async function updateOffLog(persis: IPersistence, data: IOffLog): Promise<boolean> {
     const year = new Date(data.startDate).getFullYear();
+    const month = new Date(data.startDate).getMonth();
 
     const associations = [
         new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_LOG_KEY),
         new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `off-year-${year}`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `off-month-${month}`),
         new RocketChatAssociationRecord(RocketChatAssociationModel.MESSAGE, data.msg_id),
         new RocketChatAssociationRecord(RocketChatAssociationModel.USER, data.user_id),
     ];
@@ -278,6 +303,21 @@ export async function getOffLogsByYear(year: number, read: IRead): Promise<IOffL
     const associations = [
         new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_LOG_KEY),
         new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `off-year-${year}`),
+    ];
+
+    const data = await read.getPersistenceReader().readByAssociations(associations);
+
+    return data as IOffLog[];
+}
+
+/**
+ * Get off log by month
+ */
+export async function getOffLogsByMonth(month: number, year: number, read: IRead): Promise<IOffLog[]> {
+    const associations = [
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, OFF_LOG_KEY),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `off-year-${year}`),
+        new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, `off-month-${month}`),
     ];
 
     const data = await read.getPersistenceReader().readByAssociations(associations);

@@ -7,6 +7,7 @@ import { lang } from '../lang/index';
 import { notifyUser } from '../lib/helpers';
 import { CheckinResumeCommand, CheckinStartCommand, CheckoutCommand } from './Checkin';
 import { HelpCommand } from './Help';
+import { ExtractTimeLogCommand } from './ExtractTimeLog';
 
 export class WfhCommand implements ISlashCommand {
     public command = 'wfh';
@@ -20,6 +21,7 @@ export class WfhCommand implements ISlashCommand {
         Pause: 'pause',
         Resume: 'resume',
         End: 'end',
+        Extract: 'extract',
     };
 
     constructor(private readonly app: AppClass) {}
@@ -54,6 +56,9 @@ export class WfhCommand implements ISlashCommand {
                 break;
             case this.CommandEnum.End:
                 await CheckoutCommand('end', this.app, context, read, modify, persis, params);
+                break;
+            case this.CommandEnum.Extract:
+                await ExtractTimeLogCommand(this.app, context, read, modify, persis, params);
                 break;
 
             default:

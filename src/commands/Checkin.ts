@@ -12,7 +12,6 @@ import { updateTimeLog, getCurrentTimeLog, getTimeLogStatusByMember, getTimeLogB
 import { getTimeLogId } from '../lib/helpers';
 import { timelogBlock } from '../messages/timelogBlock';
 
-
 export async function CheckinStartCommand(app: TimeOffApp, context: SlashCommandContext, read: IRead, modify: IModify, persis: IPersistence, params?: Array<string>): Promise<void> {
     const [ ...msgParams ] = params || [];
 
@@ -31,8 +30,10 @@ export async function CheckinStartCommand(app: TimeOffApp, context: SlashCommand
     const currentMemberStatus = await getTimeLogStatusByMember(user.id, read);
 
     // Already started
-    if (currentMemberStatus?.status === WfhStatus.START
-        || currentMemberStatus?.status === WfhStatus.RESUME
+    if (
+        message !== 'force'
+        && (currentMemberStatus?.status === WfhStatus.START
+            || currentMemberStatus?.status === WfhStatus.RESUME)
     ) {
         return await notifyUser({ app, message: lang.error.alreadyStart, user, room, modify });
     }

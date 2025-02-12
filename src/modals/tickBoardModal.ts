@@ -30,16 +30,22 @@ export async function tickBoardModal({ app, read, modify, inputDate, messageData
 
             messageContent += `${index ? '\n': ''}${lang.tickBoard.userLine({ username: user.username, off, wfh, late })} `;
 
+            let blackX = 0;
+            let redX = 0;
             warning.forEach((w) => {
-                messageContent += `${w.tick === 'red' ? ' :x: ' : ' :heavy_multiplication_x: '}`;
-            })
+                if (w.tick === 'red') {
+                    redX += 1;
+                } else {
+                    blackX += 1;
+                }
+            });
+
+            messageContent += ` ${lang.tickBoard.warningCount({ red: redX, black: blackX })}`;
         }
     }));
 
-    block.addContextBlock({
-        elements: [
-            block.newMarkdownTextObject(messageContent),
-        ],
+    block.addSectionBlock({
+        text: block.newMarkdownTextObject(messageContent),
     });
 
     return {

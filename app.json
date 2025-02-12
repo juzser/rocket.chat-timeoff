@@ -43,6 +43,12 @@
         },
         {
             "name": "ui.registerButtons"
+        },
+        {
+            "name": "upload.write"
+        },
+        {
+            "name": "upload.read"
         }
     ]
 }

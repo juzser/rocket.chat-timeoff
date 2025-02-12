@@ -170,13 +170,17 @@ export const vi = {
 
     tickBoard: {
         heading: 'Thống kê',
-        boardName: (date?: string) => `Thống kê *${date ? date : 'tháng này'}*:`,
+        boardName: (date?: string) => `:palm_tree: Thống kê *${date ? date : 'tháng này'}*:`,
         userLine: ({ username, off, wfh, late }: {
             username: string,
             off?: number,
             wfh?: number,
             late?: number,
-        }) => `*${username}:* ${off ? `${vi.type.off} ${off} ngày` : ''}${wfh ? ` | WFH ${wfh} ngày` : ''}${late ? ` | ${vi.type.lateEnd} ${late} phút` : ''}`,
+        }) => `*${username}:* ${off ? `${vi.type.off}: ${off} ngày |` : ''}${wfh ? ` WFH: ${wfh} ngày |` : ''}${late ? ` ${vi.type.lateEnd}: ${late} phút |` : ''}`,
+        warningCount: ({ red, black }: {
+            red: number,
+            black: number,
+        }) => `Tích đỏ: ${red} | Tích đen: ${black}`,
     },
 
     statsBoard: {
