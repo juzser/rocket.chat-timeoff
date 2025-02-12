@@ -48,7 +48,7 @@ export async function ExtractTimeLogCommand(app: TimeOffApp, context: SlashComma
     });
 
     // Build csv content
-    let csvContent = 'Date,Username,Start,Message,Pause,Message,Resume,Message,End,Message,Off,Message\n';
+    let csvContent = 'Date,Username,Start,Message,Pause,Message,Resume,Message,End,Message,Đi muộn,Message,Về sớm,Message\n';
 
     timeLogs.forEach((log) => {
         const pureDate = log.id.split('_')[1]; // ddmmyyyy
@@ -83,22 +83,26 @@ export async function ExtractTimeLogCommand(app: TimeOffApp, context: SlashComma
             // Find off log
             const memberOffLogs = offLogs.filter((off) => off.user_id === id);
 
-            let offLogLateOrEnd = '';
-            let offLogMessage = '';
+            let offLogLate = '';
+            let offLogLateMessage = '';
+            let offLogEndSoon = '';
+            let offLogEndSoonMessage = '';
 
             if (memberOffLogs.length > 0) {
                 memberOffLogs.forEach((offLog) => {
                     if (offLog.type === RequestType.LATE) {
-                        offLogLateOrEnd += `${lang.type.late} - ${offLog.duration} phút`;
-                        offLogMessage += offLog.reason;
-                    } else if (offLog.type === RequestType.END_SOON) {
-                        offLogLateOrEnd += `${lang.type.endSoon} - ${offLog.duration} phút`;
-                        offLogMessage += offLog.reason;
+                        offLogLate += `${lang.type.late} - ${offLog.duration} phút`;
+                        offLogLateMessage += offLog.reason;
+                    }
+
+                    if (offLog.type === RequestType.END_SOON) {
+                        offLogEndSoon += `${lang.type.endSoon} - ${offLog.duration} phút`;
+                        offLogEndSoonMessage += offLog.reason;
                     }
                 });
             }
 
-            csvContent += `${date},${username},${startTime},${startMessage},${pauseTime},${pauseMessage},${resumeTime},${resumeMessage},${endTime},${endMessage},${offLogLateOrEnd},${offLogMessage}\n`;
+            csvContent += `${date},${username},${startTime},${startMessage},${pauseTime},${pauseMessage},${resumeTime},${resumeMessage},${endTime},${endMessage},${offLogLate},${offLogLateMessage},${offLogEndSoon},${offLogEndSoonMessage}\n`;
         });
     });
 
