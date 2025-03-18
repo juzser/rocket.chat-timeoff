@@ -1,13 +1,11 @@
-import { BlockBuilder } from '@rocket.chat/apps-engine/definition/uikit';
 import { IScheduleLog, RequestType, TimePeriod } from '../interfaces/IRequestLog';
 import { lang } from '../lang/index';
+import { LayoutBlock } from '@rocket.chat/ui-kit';
 
-export async function dailylogBlock({ block, date, logs }: {
-    block: BlockBuilder;
+export async function dailylogBlock({ date, logs }: {
     date: string;
     logs: IScheduleLog[];
-}): Promise<void> {
-
+}): Promise<LayoutBlock[]> {
     const caption = lang.dailyLogMessage.caption(date);
 
     const offList: IScheduleLog[] = [];
@@ -79,14 +77,24 @@ export async function dailylogBlock({ block, date, logs }: {
         }).join(',');
     }
 
-    block.addSectionBlock({
-        text: block.newMarkdownTextObject(caption),
-    });
-    block.addContextBlock({
+    const block: LayoutBlock[] = [{
+        type: 'section',
+        text: {
+            type: 'mrkdwn',
+            text: caption,
+        },
+    },
+    {
+        type: 'context',
         elements: [
-            block.newMarkdownTextObject(content),
+            {
+                type: 'mrkdwn',
+                text: content,
+            },
         ],
-    });
+    }];
+
+    return block;
 }
 
 function sortDayLight(a: TimePeriod, b: TimePeriod): number {

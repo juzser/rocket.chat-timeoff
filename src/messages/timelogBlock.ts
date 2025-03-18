@@ -1,17 +1,12 @@
-import { BlockBuilder, BlockElementType, ButtonStyle } from '@rocket.chat/apps-engine/definition/uikit';
 import { IMemberTime, WfhStatus } from '../interfaces/ITimeLog';
 import { lang } from '../lang/index';
 import { getTimeHour } from '../lib/helpers';
+import { LayoutBlock } from '@rocket.chat/ui-kit';
 
-export async function timelogBlock({ block, memberData }: {
-    block: BlockBuilder,
+export async function timelogBlock({ memberData }: {
     memberData: Array<IMemberTime>,
-}): Promise<void> {
+}): Promise<LayoutBlock[]> {
     const caption = lang.message.caption(memberData.length);
-
-    block.addSectionBlock({
-        text: block.newMarkdownTextObject(caption),
-    });
 
     // Build member block
     let memberLogContent = '';
@@ -62,11 +57,26 @@ export async function timelogBlock({ block, memberData }: {
     });
 
 
-    block.addContextBlock({
-        elements: [
-            block.newMarkdownTextObject(memberLogContent),
-        ],
-    });
+    const block: LayoutBlock[] = [
+        {
+            type: 'section',
+            text: {
+                type: 'mrkdwn',
+                text: caption,
+            },
+        },
+        {
+            type: 'context',
+            elements: [
+                {
+                    type: 'mrkdwn',
+                    text: memberLogContent,
+                },
+            ],
+        },
+    ];
+
+    return block;
 }
 
 function capitalizeStr(str: string) {

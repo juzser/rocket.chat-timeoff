@@ -4,7 +4,7 @@ import { SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashco
 import { TimeOffApp } from '../../TimeOffApp';
 import { WfhStatus } from '../interfaces/ITimeLog';
 import { lang } from '../lang/index';
-import { getDirect, notifyUser, sendMessage, updateMessage } from '../lib/helpers';
+import { getDirect, notifyUser, sendMessage } from '../lib/helpers';
 import {  getOffLogsByMonth, getTimeLogByMonth } from '../lib/services';
 import { IUploadDescriptor } from '@rocket.chat/apps-engine/definition/uploads/IUploadDescriptor';
 import { IOffLog, RequestType } from '../interfaces/IRequestLog';

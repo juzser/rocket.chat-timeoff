@@ -1,4 +1,4 @@
-import { IModify, IRead } from '@rocket.chat/apps-engine/definition/accessors';
+import { IMessageBuilder, IModify, IRead } from '@rocket.chat/apps-engine/definition/accessors';
 import { IMessageAttachment } from '@rocket.chat/apps-engine/definition/messages';
 import { IRoom, RoomType } from '@rocket.chat/apps-engine/definition/rooms';
 import { BlockBuilder } from '@rocket.chat/apps-engine/definition/uikit';
@@ -8,6 +8,7 @@ import { TimeOffApp as appClass } from '../../TimeOffApp';
 import { IOffMessageData, RequestType, TimePeriod } from '../interfaces/IRequestLog';
 import { lang } from '../lang/index';
 import { AppConfig } from './config';
+import { LayoutBlock } from '@rocket.chat/ui-kit';
 
 /**
  * Sends a message using bot
@@ -27,7 +28,7 @@ export async function sendMessage({ app, modify, room, message, attachments, blo
     room: IRoom,
     message?: string,
     attachments?: Array<IMessageAttachment>,
-    blocks?: BlockBuilder,
+    blocks?: LayoutBlock[],
     avatar?: string,
     group?: boolean,
 }): Promise<string | undefined> {
@@ -71,7 +72,7 @@ export async function notifyUser({ app, message, user, room, modify, blocks, att
     room: IRoom,
     modify: IModify,
     attachments?: Array<IMessageAttachment>,
-    blocks?: BlockBuilder,
+    blocks?: LayoutBlock[],
 }): Promise<void> {
     const msg = modify.getCreator().startMessage()
         .setSender(app.botUser)
@@ -115,7 +116,7 @@ export async function updateMessage({ app, modify, messageId, sender, message, a
     sender?: IUser,
     message?: string,
     attachments?: Array<IMessageAttachment>,
-    blocks?: BlockBuilder,
+    blocks?: LayoutBlock[],
 }): Promise<void> {
     const msg = await modify.getUpdater().message(messageId, sender ? sender : app.botUser);
     msg.setEditor(msg.getSender());

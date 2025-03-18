@@ -3,12 +3,11 @@ import { SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashco
 import { ITimeLog } from './../interfaces/ITimeLog';
 
 import { TimeOffApp } from '../../TimeOffApp';
-import { TimeLogCache } from '../cache/TimeLog';
 import { IMemberState, IMemberTime, WfhStatus } from '../interfaces/ITimeLog';
 import { lang } from '../lang/index';
 import { AppConfig } from '../lib/config';
 import { notifyUser, sendMessage, updateMessage } from '../lib/helpers';
-import { updateTimeLog, getCurrentTimeLog, getTimeLogStatusByMember, getTimeLogByDateRoom, updateMemberTimeLog, updateSelfTimelog, getTimeLogByMessage } from '../lib/services';
+import { updateTimeLog, getTimeLogStatusByMember, getTimeLogByDateRoom, updateMemberTimeLog, updateSelfTimelog, getTimeLogByMessage } from '../lib/services';
 import { getTimeLogId } from '../lib/helpers';
 import { timelogBlock } from '../messages/timelogBlock';
 
@@ -64,8 +63,7 @@ export async function CheckinStartCommand(app: TimeOffApp, context: SlashCommand
     // This member is first one
     if (!timelog) {
         // Create message block
-        const block = modify.getCreator().getBlockBuilder();
-        await timelogBlock({ block, memberData: [member] });
+        const block = await timelogBlock({ memberData: [member] });
 
         // Send to channel
         const logMessageId = await sendMessage({
@@ -294,8 +292,7 @@ export async function CheckoutCommand(type: 'pause' | 'end', app: TimeOffApp, co
 }
 
 async function updateTimelogMessage(app: TimeOffApp, timelog: ITimeLog, modify: IModify): Promise<void> {
-    const block = modify.getCreator().getBlockBuilder();
-    await timelogBlock({ block, memberData: timelog.memberActive });
+    const block = await timelogBlock({ memberData: timelog.memberActive });
 
     await updateMessage({
         app,

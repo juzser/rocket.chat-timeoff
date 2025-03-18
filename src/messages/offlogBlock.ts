@@ -1,16 +1,18 @@
-import { BlockBuilder, BlockElementType } from '@rocket.chat/apps-engine/definition/uikit';
 import { IOffMessageData, IOffWarning, RequestType, WarningType, IFormData } from '../interfaces/IRequestLog';
+import { LayoutBlock } from '@rocket.chat/ui-kit';
 import { lang } from '../lang/index';
 
-export async function offlogBlock({ username, type, block, msgData, formData, warningList, isCancelled }: {
+export async function offlogBlock({ appId, username, type, msgData, formData, warningList, isCancelled }: {
+    appId: string;
     username: string;
-    block: BlockBuilder;
     type: RequestType;
     msgData: IOffMessageData;
     formData: IFormData;
     warningList: IOffWarning[];
     isCancelled?: boolean;
-}): Promise<void> {
+}): Promise<LayoutBlock[]> {
+    const block: Array<LayoutBlock> = [];
+
     let caption = lang.offLogMessage.icon[type];
 
     if (type === RequestType.OFF || type === RequestType.WFH) {
@@ -27,19 +29,28 @@ export async function offlogBlock({ username, type, block, msgData, formData, wa
         } as any)}`;
     }
 
-    block.addSectionBlock({
-        text: block.newMarkdownTextObject(caption),
+    block.push({
+        type: 'section',
+        text: {
+            type: 'mrkdwn',
+            text: caption,
+        },
         ...!isCancelled && {
             accessory: {
-                type: BlockElementType.OVERFLOW_MENU,
+                type: 'overflow',
                 actionId: 'logActions',
                 options: [
                     {
-                        text: block.newPlainTextObject(lang.common.undo),
+                        text: {
+                            type: 'plain_text',
+                            text: lang.common.undo,
+                        },
                         value: 'undo',
                     },
                 ],
-            },
+                appId,
+                blockId: 'undoLog-block',
+            }
         },
     });
 
@@ -66,17 +77,26 @@ export async function offlogBlock({ username, type, block, msgData, formData, wa
             });
         }
 
-        block.addContextBlock({
+        block.push({
+           type: 'context',
             elements: [
-                block.newMarkdownTextObject(description),
+                {
+                    type: 'mrkdwn',
+                    text: description,
+                },
             ],
         });
     } else { // show cancelled message
-        block.addContextBlock({
+        block.push({
+            type: 'context',
             elements: [
-                block.newMarkdownTextObject(lang.offLogMessage.requestCancelled(username)),
+                {
+                    type: 'mrkdwn',
+                    text: lang.offLogMessage.requestCancelled(username),
+                },
             ],
         });
     }
 
+    return block;
 }

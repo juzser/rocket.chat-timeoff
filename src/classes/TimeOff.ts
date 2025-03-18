@@ -93,17 +93,16 @@ export class TimeOff {
             throw 'There is no data';
         }
 
-        const messageLogBlock = modify.getCreator().getBlockBuilder();
-        await offlogBlock({
+        const appId = this.app.getID();
+
+        const messageLogBlock = await offlogBlock({
+            appId,
             username: sender,
-            block: messageLogBlock,
             type,
             msgData,
             formData,
             warningList,
         });
-
-        this.app.getLogger().info(messageLogBlock);
 
         const messageLogId = await sendMessage({
             app: this.app,
@@ -253,10 +252,9 @@ export class TimeOff {
         };
 
         // Rebuild message
-        const messageLogBlock = modify.getCreator().getBlockBuilder();
-        await offlogBlock({
+        const messageLogBlock = await offlogBlock({
+            appId: this.app.getID(),
             username: data.user.username,
-            block: messageLogBlock,
             type: msgOffLog.type,
             msgData,
             formData,
@@ -330,9 +328,7 @@ export class TimeOff {
         }
 
         // Send message
-        const messageLogBlock = modify.getCreator().getBlockBuilder();
-        await dailylogBlock({
-            block: messageLogBlock,
+        const messageLogBlock = await dailylogBlock({
             date: todayLog.date,
             logs: todayLog.logs,
         });
