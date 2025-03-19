@@ -48,7 +48,7 @@ export class TimeOff {
         // Open confirm modal
         const modal = await confirmRequestModal({
             type: requestType,
-            modify,
+            app: this.app,
             formData,
             remaining: offRemaining,
             checkinTime: this.app.checkinTime,
@@ -62,7 +62,7 @@ export class TimeOff {
         try {
             this.app.getLogger().info(`${sender.username} requested ${requestType}`);
             setTimeout(async () => {
-                await modify.getUiController().openModalView(modal, { triggerId }, sender)
+                await modify.getUiController().openSurfaceView(modal, { triggerId }, sender)
             }, 300);
         } catch (err) {
             throw err;

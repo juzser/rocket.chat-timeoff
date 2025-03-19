@@ -1,11 +1,11 @@
-import { IRoom } from "@rocket.chat/apps-engine/definition/rooms";
-import { BlockBuilder } from "@rocket.chat/apps-engine/definition/uikit/blocks";
+import { LayoutBlock } from "@rocket.chat/ui-kit";
 import { RequestType, TimePeriod } from "../interfaces/IRequestLog";
 import { lang } from "../lang/index";
 import { convertTimestampToDate } from "../lib/helpers";
+import { TimeOffApp as appClass } from '../../TimeOffApp';
 
 
-export function offBlockBuilder(block: BlockBuilder) {
+export function offBlockBuilder(app: appClass): LayoutBlock[] {
     const date = new Date();
     let nextWeekDayCount = 1;
     if (date.getDay() === 5) {
@@ -18,54 +18,96 @@ export function offBlockBuilder(block: BlockBuilder) {
     const tomorrowFormated = convertTimestampToDate(tomorrow);
 
     // Add Fields
-    block
-        .addInputBlock({
+    return [{
+        type: 'input',
+        blockId: 'inputDataBlock',
+        label: {
+            type: 'plain_text',
+            text: lang.requestModal.fields.startDate(RequestType.OFF),
+        },
+        element: {
+            appId: app.getID(),
             blockId: 'inputData',
-            label: block.newPlainTextObject(lang.requestModal.fields.startDate(RequestType.OFF)),
-            element: block.newPlainTextInputElement({
-                placeholder: block.newPlainTextObject('dd/mm/yyyy'),
-                initialValue: tomorrowFormated,
-                actionId: 'offStartDate',
-            }),
-        })
-        .addInputBlock({
+            type: 'plain_text_input',
+            placeholder: {
+                type: 'plain_text',
+                text: 'dd/mm/yyyy',
+            },
+            initialValue: tomorrowFormated,
+            actionId: 'offStartDate',
+        },
+    }, {
+        type: 'input',
+        blockId: 'inputDataBlock',
+        label: {
+            type: 'plain_text',
+            text: lang.requestModal.fields.period(RequestType.OFF),
+        },
+        element: {
+            appId: app.getID(),
             blockId: 'inputData',
-            label: block.newPlainTextObject(lang.requestModal.fields.period(RequestType.OFF)),
-            element: block.newStaticSelectElement({
-                placeholder: block.newPlainTextObject(lang.requestModal.fields.period(RequestType.OFF)),
-                actionId: 'offPeriod',
-                initialValue: TimePeriod.DAY,
-                options: [
-                    {
-                        text: block.newPlainTextObject(lang.requestModal.period.day),
-                        value: TimePeriod.DAY,
+            type: 'static_select',
+            initialValue: TimePeriod.DAY,
+            actionId: 'offPeriod',
+            placeholder: {
+                type: 'plain_text',
+                text: lang.requestModal.fields.period(RequestType.OFF),
+            },
+            options: [
+                {
+                    text: {
+                        type: 'plain_text',
+                        text: lang.requestModal.period.day,
                     },
-                    {
-                        text: block.newPlainTextObject(lang.requestModal.period.morning),
-                        value: TimePeriod.MORNING,
+                    value: TimePeriod.DAY,
+                },
+                {
+                    text: {
+                        type: 'plain_text',
+                        text: lang.requestModal.period.morning,
                     },
-                    {
-                        text: block.newPlainTextObject(lang.requestModal.period.afternoon),
-                        value: TimePeriod.AFTERNOON,
+                    value: TimePeriod.MORNING,
+                },
+                {
+                    text: {
+                        type: 'plain_text',
+                        text: lang.requestModal.period.afternoon,
                     },
-                ],
-            }),
-        })
-        .addInputBlock({
+                    value: TimePeriod.AFTERNOON,
+                },
+            ],
+        },
+    }, {
+        type: 'input',
+        blockId: 'inputDataBlock',
+        label: {
+            type: 'plain_text',
+            text: lang.requestModal.fields.duration(RequestType.OFF),
+        },
+        element: {
+            appId: app.getID(),
             blockId: 'inputData',
-            label: block.newPlainTextObject(lang.requestModal.fields.duration(RequestType.OFF)),
-            element: block.newPlainTextInputElement({
-                placeholder: block.newPlainTextObject('0.5, 1, ...'),
-                initialValue: '1',
-                actionId: 'offDuration',
-            }),
-        })
-        .addInputBlock({
+            type: 'plain_text_input',
+            placeholder: {
+                type: 'plain_text',
+                text: '0.5, 1, ...',
+            },
+            initialValue: '1',
+            actionId: 'offDuration',
+        },
+    }, {
+        type: 'input',
+        blockId: 'inputDataBlock',
+        label: {
+            type: 'plain_text',
+            text: lang.requestModal.fields.reason,
+        },
+        element: {
+            appId: app.getID(),
             blockId: 'inputData',
-            label: block.newPlainTextObject(lang.requestModal.fields.reason),
-            element: block.newPlainTextInputElement({
-                actionId: 'offReason',
-                multiline: true,
-            }),
-        });
+            type: 'plain_text_input',
+            actionId: 'offReason',
+            multiline: true,
+        },
+    }];
 }

@@ -73,11 +73,11 @@ export const vi = {
         fields: {
             type: 'Chọn yêu cầu',
             startDate: (type: string) => {
-                if (type === 'off') { return 'Ngày bắt đầu xin nghỉ (dd/mm/yyyy)'; }
-                if (type === 'wfh') { return 'Ngày bắt đầu WFH (dd/mm/yyyy)'; }
-                if (type === 'late') { return 'Ngày xin đi muộn (dd/mm/yyyy)'; }
+                if (type === 'off') { return 'Ngày bắt đầu xin nghỉ'; }
+                if (type === 'wfh') { return 'Ngày bắt đầu WFH'; }
+                if (type === 'late') { return 'Ngày xin đi muộn'; }
                 // End soon
-                return 'Ngày xin nghỉ sớm (dd/mm/yyyy)';
+                return 'Ngày xin nghỉ sớm';
             },
             period: (type: string) => {
                 if (type === 'off') { return 'Thời gian xin nghỉ'; }
@@ -125,7 +125,7 @@ export const vi = {
             duration,
         }) => `${user ? `*${user}*` : 'Bạn'} xin phép ${vi.confirmRequestModal.type[type]} khoảng *${duration} phút*, ${vi.confirmRequestModal.period[startDateDayLight](startDate, startDay)}`,
 
-        remainingNotice: (type: string, total: number) => `Sau khi xin phép bạn còn ${type === 'off' ? `:beach: *${total}* ngày nghỉ phép` : `:house_with_garden: *${total}* ngày WFH`}.`,
+        remainingNotice: (type: string, total: number) => `Sau khi xin phép bạn còn ${type === 'off' ? `🏖️ *${total}* ngày nghỉ phép` : `🏡 *${total}* ngày WFH`}.`,
         type: {
             off: 'nghỉ',
             wfh: 'WFH',
@@ -139,16 +139,16 @@ export const vi = {
         },
         warningOverTotal: (type: string) => `:warning: *Số ngày ${type === 'off' ? 'nghỉ phép' : 'phép WFH'} không đủ*. Bạn có thể làm ảnh hưởng tới công việc của cả team, cũng như các đánh giá về performance cá nhân, hoặc hơn nữa là bị trừ lương.
 
-        :x: Đồng thời bạn nhận tích một tích đỏ. (Quá số ngày phép)`,
-        warningLateRequest: ':heavy_multiplication_x: Bạn xin phép muộn nên chịu 1 tích đen.',
-        warningLateTick: ':heavy_multiplication_x: Xin đi muộn hoặc về sớm chịu một tích đen.',
-        warningLateLimitedTick: ':heavy_multiplication_x: Bạn đã dùng hết quỹ thời gian [đi muộn/về sớm] của tháng này. Bạn phải chịu một tích đen.',
+        ❌ Đồng thời bạn nhận tích một tích đỏ. (Quá số ngày phép)`,
+        warningLateRequest: '✖️ Bạn xin phép muộn nên chịu 1 tích đen.',
+        warningLateTick: '✖️ Xin đi muộn hoặc về sớm chịu một tích đen.',
+        warningLateLimitedTick: '✖️ Bạn đã dùng hết quỹ thời gian [đi muộn/về sớm] của tháng này. Bạn phải chịu một tích đen.',
     },
 
     offLogMessage: {
         icon: {
-            off: ':beach:',
-            wfh: ':house_with_garden:',
+            off: '🏖️',
+            wfh: '🏡',
             late: ':turtle:',
             endSoon: ':police_car:',
         },

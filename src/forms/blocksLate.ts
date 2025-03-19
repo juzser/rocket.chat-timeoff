@@ -1,11 +1,11 @@
-import { IRoom } from "@rocket.chat/apps-engine/definition/rooms";
-import { BlockBuilder } from "@rocket.chat/apps-engine/definition/uikit/blocks";
+import { LayoutBlock } from "@rocket.chat/ui-kit";
 import { RequestType, TimePeriod } from "../interfaces/IRequestLog";
 import { lang } from "../lang/index";
 import { convertTimestampToDate } from "../lib/helpers";
+import { TimeOffApp as appClass } from '../../TimeOffApp';
 
 
-export function lateBlockBuilder(block: BlockBuilder) {
+export function lateBlockBuilder(app: appClass): LayoutBlock[] {
     const date = new Date();
     let nextWeekDayCount = 1;
     if (date.getDay() === 5) {
@@ -18,50 +18,89 @@ export function lateBlockBuilder(block: BlockBuilder) {
     const tomorrowFormated = convertTimestampToDate(tomorrow);
 
     // Add Fields
-    block
-        .addInputBlock({
+    return [{
+        type: 'input',
+        blockId: 'inputDataBlock',
+        label: {
+            type: 'plain_text',
+            text: lang.requestModal.fields.startDate(RequestType.LATE),
+        },
+        element: {
+            appId: app.getID(),
             blockId: 'inputData',
-            label: block.newPlainTextObject(lang.requestModal.fields.startDate(RequestType.LATE)),
-            element: block.newPlainTextInputElement({
-                placeholder: block.newPlainTextObject('dd/mm/yyyy'),
-                initialValue: tomorrowFormated,
-                actionId: 'lateStartDate',
-            }),
-        })
-        .addInputBlock({
+            type: 'plain_text_input',
+            placeholder: {
+                type: 'plain_text',
+                text: 'dd/mm/yyyy',
+            },
+            initialValue: tomorrowFormated,
+            actionId: 'lateStartDate',
+        },
+    }, {
+        type: 'input',
+        blockId: 'inputDataBlock',
+        label: {
+            type: 'plain_text',
+            text: lang.requestModal.fields.period(RequestType.LATE),
+        },
+        element: {
+            appId: app.getID(),
             blockId: 'inputData',
-            label: block.newPlainTextObject(lang.requestModal.fields.period(RequestType.LATE)),
-            element: block.newStaticSelectElement({
-                placeholder: block.newPlainTextObject(lang.requestModal.fields.period(RequestType.LATE)),
-                actionId: 'latePeriod',
-                initialValue: TimePeriod.MORNING,
-                options: [
-                    {
-                        text: block.newPlainTextObject(lang.requestModal.period.morning),
-                        value: TimePeriod.MORNING,
+            type: 'static_select',
+            initialValue: TimePeriod.MORNING,
+            actionId: 'latePeriod',
+            placeholder: {
+                type: 'plain_text',
+                text: lang.requestModal.fields.period(RequestType.LATE),
+            },
+            options: [
+                {
+                    text: {
+                        type: 'plain_text',
+                        text: lang.requestModal.period.morning,
                     },
-                    {
-                        text: block.newPlainTextObject(lang.requestModal.period.afternoon),
-                        value: TimePeriod.AFTERNOON,
+                    value: TimePeriod.MORNING,
+                },
+                {
+                    text: {
+                        type: 'plain_text',
+                        text: lang.requestModal.period.afternoon,
                     },
-                ],
-            }),
-        })
-        .addInputBlock({
+                    value: TimePeriod.AFTERNOON,
+                },
+            ],
+        },
+    }, {
+        type: 'input',
+        blockId: 'inputDataBlock',
+        label: {
+            type: 'plain_text',
+            text: lang.requestModal.fields.duration(RequestType.LATE),
+        },
+        element: {
+            appId: app.getID(),
             blockId: 'inputData',
-            label: block.newPlainTextObject(lang.requestModal.fields.duration(RequestType.LATE)),
-            element: block.newPlainTextInputElement({
-                placeholder: block.newPlainTextObject('30, 45, 60,...'),
-                initialValue: '30',
-                actionId: 'lateDuration',
-            }),
-        })
-        .addInputBlock({
+            type: 'plain_text_input',
+            placeholder: {
+                type: 'plain_text',
+                text: '30, 45, 60,...',
+            },
+            initialValue: '30',
+            actionId: 'lateDuration',
+        },
+    }, {
+        type: 'input',
+        blockId: 'inputDataBlock',
+        label: {
+            type: 'plain_text',
+            text: lang.requestModal.fields.reason,
+        },
+        element: {
+            appId: app.getID(),
             blockId: 'inputData',
-            label: block.newPlainTextObject(lang.requestModal.fields.reason),
-            element: block.newPlainTextInputElement({
-                actionId: 'lateReason',
-                multiline: true,
-            }),
-        });
+            type: 'plain_text_input',
+            actionId: 'lateReason',
+            multiline: true,
+        },
+    }];
 }

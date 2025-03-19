@@ -1,18 +1,20 @@
-import { IModify, IRead } from '@rocket.chat/apps-engine/definition/accessors';
-import { IUIKitModalViewParam } from '@rocket.chat/apps-engine/definition/uikit/UIKitInteractionResponder';
+import { IUIKitSurfaceViewParam } from '@rocket.chat/apps-engine/definition/accessors';
+import { UIKitSurfaceType } from '@rocket.chat/apps-engine/definition/uikit';
 
+import { LayoutBlock } from '@rocket.chat/ui-kit';
 import { lang } from '../lang/index';
+import { TimeOffApp as appClass } from '../../TimeOffApp';
 
-export async function extraOffBoardModal({ modify, stats }: {
-    modify: IModify;
+export async function extraOffBoardModal({ app, stats }: {
+    app: appClass;
     stats: {
         username: string;
         offExtra?: number;
         wfhExtra?: number;
         lateExtra?: number;
     }[];
-}): Promise<IUIKitModalViewParam> {
-    const block = modify.getCreator().getBlockBuilder();
+}): Promise<IUIKitSurfaceViewParam> {
+    const block: LayoutBlock[] = [];
 
     let messageContent = '';
 
@@ -20,16 +22,31 @@ export async function extraOffBoardModal({ modify, stats }: {
         messageContent += `${index ? '\n': ''}${index + 1}. ${lang.extraLogs.userLine({ username: stat.username, off: stat.offExtra, wfh: stat.wfhExtra, late: stat.lateExtra })}`;
     });
 
-    block.addSectionBlock({
-        text: block.newMarkdownTextObject(messageContent),
+    block.push({
+        type: 'section',
+        text: {
+            type: 'mrkdwn',
+            text: messageContent,
+        },
     });
 
     return {
+        type: UIKitSurfaceType.MODAL,
         id: 'modalExtraOffBoard',
-        title: block.newPlainTextObject(lang.extraLogs.heading),
-        close: block.newButtonElement({
-            text: block.newPlainTextObject(lang.common.cancel),
-        }),
-        blocks: block.getBlocks(),
+        title: {
+            type: 'plain_text',
+            text: lang.extraLogs.heading,
+        },
+        close: {
+            appId: app.getID(),
+            blockId: 'extraOffBoardModal',
+            actionId: 'close',
+            type: 'button',
+            text: {
+                type: 'plain_text',
+                text: lang.common.cancel,
+            },
+        },
+        blocks: block,
     };
 }

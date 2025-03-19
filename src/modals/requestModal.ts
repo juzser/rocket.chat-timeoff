@@ -1,10 +1,10 @@
-import { IModify, IPersistence, IRead } from '@rocket.chat/apps-engine/definition/accessors';
+import { IModify, IPersistence, IRead, IUIKitSurfaceViewParam } from '@rocket.chat/apps-engine/definition/accessors';
 import { IUser } from '@rocket.chat/apps-engine/definition/users';
-import { ButtonStyle } from '@rocket.chat/apps-engine/definition/uikit';
-import { IUIKitModalViewParam } from '@rocket.chat/apps-engine/definition/uikit/UIKitInteractionResponder';
+import { ButtonStyle, UIKitSurfaceType } from '@rocket.chat/apps-engine/definition/uikit';
+import { LayoutBlock, type Option } from '@rocket.chat/ui-kit';
 
 import { TimeOffApp as appClass } from '../../TimeOffApp';
-import { RequestType, TimePeriod } from '../interfaces/IRequestLog';
+import { RequestType } from '../interfaces/IRequestLog';
 import { lang } from '../lang/index';
 import { offBlockBuilder } from '../forms/blocksOff';
 import { wfhBlockBuilder } from '../forms/blocksWfh';
@@ -19,8 +19,8 @@ export async function requestModal({ app, user, modify, read, persis, requestTyp
     read: IRead,
     persis: IPersistence,
     requestType?: string,
-}): Promise<IUIKitModalViewParam> {
-    const block = modify.getCreator().getBlockBuilder();
+}): Promise<IUIKitSurfaceViewParam> {
+    const block: LayoutBlock[] = [];
 
     const offRemaining = await getRemainingOff({
         dayoffPerMonth: app.dayoffPerMonth,
@@ -31,76 +31,116 @@ export async function requestModal({ app, user, modify, read, persis, requestTyp
         persis,
     });
 
-    block.addSectionBlock({
-        text: block.newMarkdownTextObject(lang.requestModal.caption(offRemaining.off, offRemaining.wfh)),
+    block.push({
+        type: 'section',
+        text: {
+            type: 'mrkdwn',
+            text: lang.requestModal.caption(offRemaining.off, offRemaining.wfh),
+        },
     });
 
     // Off type options
-    const typeOptions = [
+    const typeOptions: Option[] = [
         {
-            text: block.newPlainTextObject(lang.type.off),
+            text: {
+                type: 'plain_text',
+                text: lang.type.off,
+            },
             value: RequestType.OFF,
         },
         {
-            text: block.newPlainTextObject(lang.type.wfh),
+            text: {
+                type: 'plain_text',
+                text: lang.type.wfh,
+            },
             value: RequestType.WFH,
         },
         {
-            text: block.newPlainTextObject(lang.type.late),
+            text: {
+                type: 'plain_text',
+                text: lang.type.late,
+            },
             value: RequestType.LATE,
         },
         {
-            text: block.newPlainTextObject(lang.type.endSoon),
+            text: {
+                type: 'plain_text',
+                text: lang.type.endSoon,
+            },
             value: RequestType.END_SOON,
         },
     ];
 
     // Add Fields
-    block
-        .addActionsBlock({
+    block.push({
+        type: 'actions',
+        blockId: 'requestOff',
+        elements: [{
+            type: 'static_select',
+            appId: app.getID(),
             blockId: 'requestOff',
-            elements: [
-                block.newStaticSelectElement({
-                    actionId: 'offType',
-                    initialValue: requestType || RequestType.OFF,
-                    options: typeOptions,
-                    placeholder: block.newPlainTextObject(lang.requestModal.fields.type),
-                }
-            )
-        ],
-        })
-        .addDividerBlock();
+            actionId: 'offType',
+            initialValue: requestType || RequestType.OFF,
+            placeholder: {
+                type: 'plain_text',
+                text: lang.requestModal.fields.type,
+            },
+            options: typeOptions,
+        }],
+    });
+
+    block.push({
+        type: 'divider',
+    });
 
     if (requestType === RequestType.LATE) {
         // Late request
-        lateBlockBuilder(block);
+        block.push(...lateBlockBuilder(app));
     }
 
     else if (requestType === RequestType.END_SOON) {
         // End soon request
-        endSoonBlockBuilder(block);
+        block.push(...endSoonBlockBuilder(app));
     }
 
     else if (requestType === RequestType.OFF) {
         // Off request
-        offBlockBuilder(block);
+        block.push(...offBlockBuilder(app));
     }
 
     else if (requestType === RequestType.WFH) {
         // WFH request
-        wfhBlockBuilder(block);
+        block.push(...wfhBlockBuilder(app));
     }
 
     return {
+        type: UIKitSurfaceType.MODAL,
         id: 'modalRequestOff',
-        title: block.newPlainTextObject(lang.requestModal.heading),
-        submit: block.newButtonElement({
-            text: block.newPlainTextObject(lang.common.confirm),
+        title: {
+            type: 'plain_text',
+            text: lang.requestModal.heading,
+        },
+        submit: {
+            appId: app.getID(),
+            blockId: 'requestOffModal',
+            actionId: 'requestOffSubmit',
+            type: 'button',
+            text: {
+                type: 'plain_text',
+                text: lang.common.confirm,
+            },
             style: ButtonStyle.DANGER,
-        }),
-        close: block.newButtonElement({
-            text: block.newPlainTextObject(lang.common.cancel),
-        }),
-        blocks: block.getBlocks(),
+        },
+        close: {
+            type: 'button',
+            appId: app.getID(),
+            blockId: 'requestOffModal',
+            actionId: 'requestOffCancel',
+            text: {
+                type: 'plain_text',
+                text: lang.common.cancel,
+            },
+        },
+        blocks: block,
     };
 }

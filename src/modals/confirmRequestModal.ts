@@ -1,15 +1,16 @@
-import { IModify } from '@rocket.chat/apps-engine/definition/accessors';
-import { ButtonStyle } from '@rocket.chat/apps-engine/definition/uikit';
-import { IUIKitModalViewParam } from '@rocket.chat/apps-engine/definition/uikit/UIKitInteractionResponder';
+import { IModify, IUIKitSurfaceViewParam } from '@rocket.chat/apps-engine/definition/accessors';
+import { ButtonStyle, UIKitSurfaceType } from '@rocket.chat/apps-engine/definition/uikit';
+import { LayoutBlock } from '@rocket.chat/ui-kit';
 
 import { IOffWarning, RequestType, TimePeriod, WarningType, IFormData, IMemberOffRemain } from '../interfaces/IRequestLog';
 import { lang } from '../lang/index';
 import { buildOffMessageData, getTotalHours } from '../lib/helpers';
 import { AppConfig } from '../lib/config';
+import { TimeOffApp as appClass } from '../../TimeOffApp';
 
-export async function confirmRequestModal({ type, modify, formData, remaining, checkinTime, checkoutTime, requestOffBefore, requestWfhBefore, requestLateBefore, limitLateDuration }: {
+export async function confirmRequestModal({ type, app, formData, remaining, checkinTime, checkoutTime, requestOffBefore, requestWfhBefore, requestLateBefore, limitLateDuration }: {
+    app: appClass,
     type: RequestType,
-    modify: IModify,
     formData: IFormData,
     remaining: IMemberOffRemain,
     checkinTime: { morning: string; afternoon: string },
@@ -18,9 +19,8 @@ export async function confirmRequestModal({ type, modify, formData, remaining, c
     requestWfhBefore: number;
     requestLateBefore: number;
     limitLateDuration: number;
-}): Promise<IUIKitModalViewParam> {
-    const block = modify.getCreator().getBlockBuilder();
-
+}): Promise<IUIKitSurfaceViewParam> {
+    const block: LayoutBlock[] = [];
     const { startDate, period, duration } = formData;
 
     const warningList: IOffWarning[] = [];
@@ -28,51 +28,68 @@ export async function confirmRequestModal({ type, modify, formData, remaining, c
 
     if (type === RequestType.OFF || type === RequestType.WFH) {
         // Confirm information
-        block.addSectionBlock({
-            text: block.newMarkdownTextObject(lang.confirmRequestModal.offOverview({
-                user: null,
-                type,
-                ...msgData,
-            } as any)),
+        block.push({
+            type: 'section',
+            text: {
+                type: 'mrkdwn',
+                text: lang.confirmRequestModal.offOverview({
+                    user: null,
+                    type,
+                    ...msgData,
+                } as any),
+            },
         });
 
         // Total remaining day off
         const totalLeft = (type === RequestType.OFF ? remaining.off : remaining.wfh) - duration;
 
-        block.addSectionBlock({
-            text: block.newMarkdownTextObject(lang.confirmRequestModal.remainingNotice(
-                type,
-                totalLeft,
-            )),
+        block.push({
+            type: 'section',
+            text: {
+                type: 'mrkdwn',
+                text: lang.confirmRequestModal.remainingNotice(type, totalLeft),
+            },
         });
 
         // Warning if request over number of day off
         if (totalLeft < 0) {
-            block.addDividerBlock();
-            block.addSectionBlock({
-                text: block.newMarkdownTextObject(lang.confirmRequestModal.warningOverTotal(type)),
+            block.push({ type: 'divider' });
+            block.push({
+                type: 'section',
+                text: {
+                    type: 'mrkdwn',
+                    text: lang.confirmRequestModal.warningOverTotal(type),
+                },
             });
 
             // Store the warning state
             warningList.push({ name: WarningType.OVERTOTAL, value: totalLeft, tick: 'red' });
         }
     } else { // Late or End Soon
-        block.addSectionBlock({
-            text: block.newMarkdownTextObject(lang.confirmRequestModal.lateOverview({
-                user: null,
-                type,
-                ...msgData,
-            } as any)),
-        });
+        block.push({
+            type: 'section',
+            text: {
+                type: 'mrkdwn',
+                text: lang.confirmRequestModal.lateOverview({
+                    user: null,
+                    type,
+                    ...msgData,
+                } as any),
+            },
+        })
 
         // Warning late/end soon still have to tick on dead board
         if (remaining.late - duration < 0) {
-            block.addSectionBlock({
-                text: block.newMarkdownTextObject(limitLateDuration && limitLateDuration > 0
-                    ? lang.confirmRequestModal.warningLateTick
-                    : lang.confirmRequestModal.warningLateLimitedTick
-                ),
+            block.push({
+                type: 'section',
+                text: {
+                    type: 'mrkdwn',
+                    text: limitLateDuration && limitLateDuration > 0
+                        ? lang.confirmRequestModal.warningLateTick
+                        : lang.confirmRequestModal.warningLateLimitedTick,
+                },
             });
+
             // Store the warning state
             warningList.push({ name: WarningType.LATE_END, tick: 'black' });
         }
@@ -150,34 +167,55 @@ export async function confirmRequestModal({ type, modify, formData, remaining, c
     }
 
     if (isLateRequest()) {
-        block.addSectionBlock({
-            text: block.newMarkdownTextObject(lang.confirmRequestModal.warningLateRequest),
-        });
+        block.push({
+            type: 'section',
+            text: {
+                type: 'mrkdwn',
+                text: lang.confirmRequestModal.warningLateRequest,
+            },
+        })
 
         warningList.push({ name: WarningType.LATE_REQUEST, tick: 'black' });
     }
 
     return {
+        type: UIKitSurfaceType.MODAL,
         id: `confirmRequestOff--${JSON.stringify({
             warningList,
             formData,
             type,
             msgData,
         })}`,
-        title: block.newPlainTextObject(lang.confirmRequestModal.heading),
-        submit: block.newButtonElement({
-            text: block.newPlainTextObject(lang.common.confirm),
-            style: ButtonStyle.DANGER,
+        title: {
+            type: 'plain_text',
+            text: lang.confirmRequestModal.heading,
+        },
+        submit: {
+            type: 'button',
+            appId: app.getID(),
+            blockId: 'confirmRequestOffModal',
+            actionId: 'confirmRequestOffSubmit',
+            text: {
+                type: 'plain_text',
+                text: lang.common.confirm,
+            },
             value: JSON.stringify({
                 warningList,
                 formData,
                 type,
                 msgData,
             }),
-        }),
-        close: block.newButtonElement({
-            text: block.newPlainTextObject(lang.common.cancel),
-        }),
-        blocks: block.getBlocks(),
+        },
+        close: {
+            type: 'button',
+            appId: app.getID(),
+            blockId: 'confirmRequestOffModal',
+            actionId: 'confirmRequestOffCancel',
+            text: {
+                type: 'plain_text',
+                text: lang.common.cancel,
+            },
+        },
+        blocks: block,
     };
 }

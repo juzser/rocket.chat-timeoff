@@ -62,9 +62,9 @@ export async function ExtraOffStatsCommand({ app, context, read, persis, modify,
     const triggerId = context.getTriggerId();
 
     if (triggerId && membersExtra && membersExtra.length) {
-        const modal = await extraOffBoardModal({ modify, stats: membersExtra });
+        const modal = await extraOffBoardModal({ app, stats: membersExtra });
 
-        await modify.getUiController().openModalView(modal, { triggerId }, context.getSender());
+        await modify.getUiController().openSurfaceView(modal, { triggerId }, context.getSender());
     }
 
     return;

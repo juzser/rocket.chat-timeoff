@@ -1,11 +1,11 @@
-import { IRoom } from "@rocket.chat/apps-engine/definition/rooms";
-import { BlockBuilder } from "@rocket.chat/apps-engine/definition/uikit/blocks";
+import { LayoutBlock } from "@rocket.chat/ui-kit";
 import { RequestType, TimePeriod } from "../interfaces/IRequestLog";
 import { lang } from "../lang/index";
 import { convertTimestampToDate } from "../lib/helpers";
+import { TimeOffApp as appClass } from '../../TimeOffApp';
 
 
-export function wfhBlockBuilder(block: BlockBuilder) {
+export function wfhBlockBuilder(app: appClass): LayoutBlock[] {
     const date = new Date();
     let nextWeekDayCount = 1;
     if (date.getDay() === 5) {
@@ -18,54 +18,96 @@ export function wfhBlockBuilder(block: BlockBuilder) {
     const tomorrowFormated = convertTimestampToDate(tomorrow);
 
     // Add Fields
-    block
-        .addInputBlock({
+    return [{
+        type: 'input',
+        blockId: 'inputDataBlock',
+        label: {
+            type: 'plain_text',
+            text: lang.requestModal.fields.startDate(RequestType.WFH),
+        },
+        element: {
+            appId: app.getID(),
             blockId: 'inputData',
-            label: block.newPlainTextObject(lang.requestModal.fields.startDate(RequestType.WFH)),
-            element: block.newPlainTextInputElement({
-                placeholder: block.newPlainTextObject('dd/mm/yyyy'),
-                initialValue: tomorrowFormated,
-                actionId: 'wfhStartDate',
-            }),
-        })
-        .addInputBlock({
+            type: 'plain_text_input',
+            placeholder: {
+                type: 'plain_text',
+                text: 'dd/mm/yyyy',
+            },
+            initialValue: tomorrowFormated,
+            actionId: 'wfhStartDate',
+        },
+    }, {
+        type: 'input',
+        blockId: 'inputDataBlock',
+        label: {
+            type: 'plain_text',
+            text: lang.requestModal.fields.period(RequestType.WFH),
+        },
+        element: {
+            appId: app.getID(),
             blockId: 'inputData',
-            label: block.newPlainTextObject(lang.requestModal.fields.period(RequestType.WFH)),
-            element: block.newStaticSelectElement({
-                placeholder: block.newPlainTextObject(lang.requestModal.fields.period(RequestType.WFH)),
-                actionId: 'wfhPeriod',
-                initialValue: TimePeriod.DAY,
-                options: [
-                    {
-                        text: block.newPlainTextObject(lang.requestModal.period.day),
-                        value: TimePeriod.DAY,
+            type: 'static_select',
+            initialValue: TimePeriod.DAY,
+            actionId: 'wfhPeriod',
+            placeholder: {
+                type: 'plain_text',
+                text: lang.requestModal.fields.period(RequestType.WFH),
+            },
+            options: [
+                {
+                    text: {
+                        type: 'plain_text',
+                        text: lang.requestModal.period.day,
                     },
-                    {
-                        text: block.newPlainTextObject(lang.requestModal.period.morning),
-                        value: TimePeriod.MORNING,
+                    value: TimePeriod.DAY,
+                },
+                {
+                    text: {
+                        type: 'plain_text',
+                        text: lang.requestModal.period.morning,
                     },
-                    {
-                        text: block.newPlainTextObject(lang.requestModal.period.afternoon),
-                        value: TimePeriod.AFTERNOON,
+                    value: TimePeriod.MORNING,
+                },
+                {
+                    text: {
+                        type: 'plain_text',
+                        text: lang.requestModal.period.afternoon,
                     },
-                ],
-            }),
-        })
-        .addInputBlock({
+                    value: TimePeriod.AFTERNOON,
+                },
+            ],
+        }
+    }, {
+        type: 'input',
+        blockId: 'inputDataBlock',
+        label: {
+            type: 'plain_text',
+            text: lang.requestModal.fields.duration(RequestType.WFH),
+        },
+        element: {
+            appId: app.getID(),
             blockId: 'inputData',
-            label: block.newPlainTextObject(lang.requestModal.fields.duration(RequestType.WFH)),
-            element: block.newPlainTextInputElement({
-                placeholder: block.newPlainTextObject(`0.5, 1, ...`),
-                initialValue: '1',
-                actionId: 'wfhDuration',
-            }),
-        })
-        .addInputBlock({
+            type: 'plain_text_input',
+            placeholder: {
+                type: 'plain_text',
+                text: `0.5, 1, ...`,
+            },
+            initialValue: '1',
+            actionId: 'wfhDuration',
+        },
+    }, {
+        type: 'input',
+        blockId: 'inputDataBlock',
+        label: {
+            type: 'plain_text',
+            text: lang.requestModal.fields.reason,
+        },
+        element: {
+            appId: app.getID(),
             blockId: 'inputData',
-            label: block.newPlainTextObject(lang.requestModal.fields.reason),
-            element: block.newPlainTextInputElement({
-                actionId: 'wfhReason',
-                multiline: true,
-            }),
-        });
+            type: 'plain_text_input',
+            actionId: 'wfhReason',
+            multiline: true,
+        },
+    }];
 }

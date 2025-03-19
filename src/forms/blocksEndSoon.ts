@@ -1,11 +1,11 @@
 import { IRoom } from "@rocket.chat/apps-engine/definition/rooms";
-import { BlockBuilder } from "@rocket.chat/apps-engine/definition/uikit/blocks";
+import { LayoutBlock } from "@rocket.chat/ui-kit";
 import { RequestType, TimePeriod } from "../interfaces/IRequestLog";
 import { lang } from "../lang/index";
 import { convertTimestampToDate } from "../lib/helpers";
+import { TimeOffApp as appClass } from '../../TimeOffApp';
 
-
-export function endSoonBlockBuilder(block: BlockBuilder) {
+export function endSoonBlockBuilder(app: appClass): LayoutBlock[] {
     const date = new Date();
     let nextWeekDayCount = 1;
     if (date.getDay() === 5) {
@@ -18,50 +18,94 @@ export function endSoonBlockBuilder(block: BlockBuilder) {
     const tomorrowFormated = convertTimestampToDate(tomorrow);
 
     // Add Fields
-    block
-        .addInputBlock({
-            blockId: 'inputData',
-            label: block.newPlainTextObject(lang.requestModal.fields.startDate(RequestType.END_SOON)),
-            element: block.newPlainTextInputElement({
-                placeholder: block.newPlainTextObject('dd/mm/yyyy'),
+    return [
+        {
+            type: 'input',
+            blockId: 'inputDataBlock',
+            label: {
+                type: 'plain_text',
+                text: lang.requestModal.fields.startDate(RequestType.END_SOON),
+            },
+            element: {
+                appId: app.getID(),
+                blockId: 'inputData',
+                type: 'plain_text_input',
+                placeholder: {
+                    type: 'plain_text',
+                    text: 'dd/mm/yyyy',
+                },
                 initialValue: tomorrowFormated,
                 actionId: 'endSoonStartDate',
-            }),
-        })
-        .addInputBlock({
-            blockId: 'inputData',
-            label: block.newPlainTextObject(lang.requestModal.fields.period(RequestType.END_SOON)),
-            element: block.newStaticSelectElement({
-                placeholder: block.newPlainTextObject(lang.requestModal.fields.period(RequestType.END_SOON)),
-                actionId: 'endSoonPeriod',
+            },
+        },
+        {
+            type: 'input',
+            blockId: 'inputDataBlock',
+            label: {
+                type: 'plain_text',
+                text: lang.requestModal.fields.period(RequestType.END_SOON),
+            },
+            element: {
+                appId: app.getID(),
+                blockId: 'inputData',
+                type: 'static_select',
                 initialValue: TimePeriod.AFTERNOON,
+                actionId: 'endSoonPeriod',
+                placeholder: {
+                    type: 'plain_text',
+                    text: lang.requestModal.fields.period(RequestType.END_SOON),
+                },
                 options: [
                     {
-                        text: block.newPlainTextObject(lang.requestModal.period.morning),
+                        text: {
+                            type: 'plain_text',
+                            text: lang.requestModal.period.morning,
+                        },
                         value: TimePeriod.MORNING,
                     },
                     {
-                        text: block.newPlainTextObject(lang.requestModal.period.afternoon),
+                        text: {
+                            type: 'plain_text',
+                            text: lang.requestModal.period.afternoon,
+                        },
                         value: TimePeriod.AFTERNOON,
                     },
                 ],
-            }),
-        })
-        .addInputBlock({
-            blockId: 'inputData',
-            label: block.newPlainTextObject(lang.requestModal.fields.duration(RequestType.END_SOON)),
-            element: block.newPlainTextInputElement({
-                placeholder: block.newPlainTextObject('30, 45, 60,...'),
-                initialValue: '30',
+            },
+        },
+        {
+            type: 'input',
+            blockId: 'inputDataBlock',
+            label: {
+                type: 'plain_text',
+                text: lang.requestModal.fields.duration(RequestType.END_SOON),
+            },
+            element: {
+                appId: app.getID(),
+                blockId: 'inputData',
+                type: 'plain_text_input',
                 actionId: 'endSoonDuration',
-            }),
-        })
-        .addInputBlock({
-            blockId: 'inputData',
-            label: block.newPlainTextObject(lang.requestModal.fields.reason),
-            element: block.newPlainTextInputElement({
+                placeholder: {
+                    type: 'plain_text',
+                    text: '30, 45, 60,...',
+                },
+                initialValue: '30',
+            },
+        },
+        {
+            type: 'input',
+            blockId: 'inputDataBlock',
+            label: {
+                type: 'plain_text',
+                text: lang.requestModal.fields.reason,
+            },
+            element: {
+                appId: app.getID(),
+                blockId: 'inputData',
+                type: 'plain_text_input',
                 actionId: 'endSoonReason',
                 multiline: true,
-            }),
-        });
+            },
+        },
+    ];
 }

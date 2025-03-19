@@ -90,7 +90,6 @@ export class TimeOffApp extends App {
             }
 
             const tomorrow = date.setDate(date.getDate() + nextWeekDayCount);
-            const tomorrowFormated = convertTimestampToDate(tomorrow);
 
             // Fallback value for inputs
             const defaultPeriod = (offType === RequestType.OFF || offType === RequestType.WFH)
@@ -107,7 +106,7 @@ export class TimeOffApp extends App {
             const formData = {
                 startDate: state.inputData[`${offType}StartDate`]
                     ? convertDateToTimestamp(state.inputData[`${offType}StartDate`])
-                    : convertDateToTimestamp(tomorrowFormated),
+                    : tomorrow,
                 period: state.inputData[`${offType}Period`] || defaultPeriod,
                 duration: roundToHalf(+state.inputData[`${offType}Duration`] || defaultDuration),
                 reason: state.inputData[`${offType}Reason`],
@@ -207,7 +206,7 @@ export class TimeOffApp extends App {
 
         if (actionId === 'off-request-trigger') {
             const modal = await requestModal({ app: this, user, modify, read, persis, requestType: RequestType.OFF });
-            await modify.getUiController().openModalView(modal, { triggerId }, user);
+            await modify.getUiController().openSurfaceView(modal, { triggerId }, user);
         }
 
         return context.getInteractionResponder().successResponse();
